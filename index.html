@@ -4,9 +4,12 @@
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+
 <title>Map Vélo</title>
+
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 
@@ -14,8 +17,11 @@
 <style>
 
 body{
+
 margin:0;
 font-family:Arial;
+text-align:center;
+
 }
 
 
@@ -28,12 +34,50 @@ font-size:16px;
 }
 
 
-#map{
+input{
 
-height:85vh;
+padding:10px;
+margin:5px;
+font-size:16px;
 
 }
 
+
+
+#map{
+
+height:75vh;
+
+}
+
+
+
+.page{
+
+display:none;
+
+}
+
+
+
+.active{
+
+display:block;
+
+}
+
+
+
+.carte{
+
+background:#f2f2f2;
+border-radius:15px;
+padding:20px;
+margin:15px auto;
+width:80%;
+max-width:400px;
+
+}
 
 
 </style>
@@ -45,38 +89,90 @@ height:85vh;
 <body>
 
 
-<button onclick="ouvrirTCX()">
-📂 Importer TCX
+
+<h1>🚴 Map Vélo</h1>
+
+
+
+
+<!-- MENU PRINCIPAL -->
+
+
+<div>
+
+
+<button onclick="ouvrirPage('carte')">
+🗺️ Carte
 </button>
 
 
-<button onclick="location.href='stats.html'">
+<button onclick="ouvrirPage('stats')">
 📊 Statistiques
 </button>
 
 
-<button onclick="location.href='amis.html'">
+<button onclick="ouvrirPage('amis')">
 👥 Amis
 </button>
 
 
-<button onclick="location.href='classement.html'">
+<button onclick="ouvrirPage('classement')">
 🏆 Classement
 </button>
 
 
-<button onclick="effacer()">
-🗑️ Effacer
+<button onclick="ouvrirPage('profil')">
+⚙️ Profil
+</button>
+
+
+</div>
+
+
+
+
+
+
+
+<!-- PAGE CARTE -->
+
+
+<div id="carte" class="page active">
+
+
+<button onclick="ouvrirTCX()">
+
+📂 Importer TCX
+
+</button>
+
+
+<button onclick="selectionnerTrajets()">
+
+☑️ Sélectionner
+
 </button>
 
 
 
-<input 
-id="fichier" 
-type="file" 
+<button onclick="effacer()">
+
+🗑️ Effacer
+
+</button>
+
+
+
+<input
+
+id="fichier"
+
+type="file"
+
 accept=".tcx"
+
 multiple
-style="display:none"
+
 >
 
 
@@ -84,42 +180,269 @@ style="display:none"
 <div id="map"></div>
 
 
+</div>
 
+
+
+
+
+
+
+<!-- PAGE STATISTIQUES -->
+
+
+<div id="stats" class="page">
+
+
+<h2>📊 Statistiques</h2>
+
+
+
+<button onclick="filtrerStats('toujours')">
+
+Toujours
+
+</button>
+
+
+<button onclick="filtrerStats('annee')">
+
+Année
+
+</button>
+
+
+<button onclick="filtrerStats('mois')">
+
+Mois
+
+</button>
+
+
+<button onclick="filtrerStats('semaine')">
+
+Semaine
+
+</button>
+
+
+<button onclick="filtrerStats('jour')">
+
+Jour
+
+</button>
+
+
+
+<div id="resultatStats"></div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- PAGE AMIS -->
+
+
+<div id="amis" class="page">
+
+
+<h2>👥 Amis</h2>
+
+
+
+<input
+
+id="emailAmi"
+
+placeholder="Email de l'ami"
+
+>
+
+
+
+<button onclick="ajouterAmi(emailAmi.value)">
+
+➕ Ajouter
+
+</button>
+
+
+
+<div id="listeAmis"></div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<!-- PAGE CLASSEMENT -->
+
+
+<div id="classement" class="page">
+
+
+<h2>🏆 Classement</h2>
+
+
+<div id="listeClassement"></div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- PAGE PROFIL -->
+
+
+<div id="profil" class="page">
+
+
+<h2>⚙️ Profil</h2>
+
+
+
+<div id="infosProfil"></div>
+
+
+
+<input
+
+id="nomProfil"
+
+placeholder="Ton nom"
+
+>
+
+
+
+<button onclick="sauvegarderProfil()">
+
+💾 Sauvegarder
+
+</button>
+
+
+
+
+</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
 
 
 <script type="module">
 
 
-// Firebase
+// =====================
+// FIREBASE
+// =====================
 
-import { initializeApp } 
+
+import { initializeApp }
+
 from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 
 
-import { getFirestore }
+import { 
+
+getFirestore,
+
+doc,
+
+setDoc,
+
+getDoc,
+
+collection,
+
+addDoc,
+
+getDocs
+
+}
+
 from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+
+
+import {
+
+
+getAuth,
+
+onAuthStateChanged,
+
+createUserWithEmailAndPassword,
+
+signInWithEmailAndPassword,
+
+signOut
+
+
+}
+
+from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+
+
+
 
 
 
 const firebaseConfig = {
 
 
-apiKey: "TON_API_KEY",
+apiKey:
 
-authDomain: "map-velo-f63ad.firebaseapp.com",
+"AIzaSyC-4f3v5hKMeGKKd1NwvZt_h1Mx1g1yXFE",
 
-projectId: "map-velo-f63ad",
 
-storageBucket: "map-velo-f63ad.firebasestorage.app",
+authDomain:
 
-messagingSenderId: "915926626440",
+"map-velo-f63ad.firebaseapp.com",
 
-appId: "1:915926626440:web:96868d343fce5c5d2a2f3d"
+
+projectId:
+
+"map-velo-f63ad",
+
+
+storageBucket:
+
+"map-velo-f63ad.firebasestorage.app",
+
+
+messagingSenderId:
+
+"915926626440",
+
+
+appId:
+
+"1:915926626440:web:96868d343fce5c5d2a2f3d"
 
 
 };
+
+
 
 
 
@@ -132,12 +455,144 @@ const db = getFirestore(app);
 
 
 
-console.log("Firebase connecté");
+const auth = getAuth(app);
 
 
 
-</script>
-let map = L.map("map").setView([20,0],2);
+
+let utilisateur = null;
+
+
+
+
+
+
+onAuthStateChanged(auth,(user)=>{
+
+
+utilisateur=user;
+
+
+
+if(user){
+
+
+console.log(
+
+"Connecté : "+user.email
+
+);
+
+
+
+chargerProfil();
+
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+
+
+// =====================
+// NAVIGATION
+// =====================
+
+
+window.ouvrirPage=function(nom){
+
+
+
+document
+
+.querySelectorAll(".page")
+
+.forEach(p=>{
+
+
+p.classList.remove("active");
+
+
+});
+
+
+
+
+
+document
+
+.getElementById(nom)
+
+.classList.add("active");
+
+
+
+
+
+if(nom=="carte"){
+
+
+
+setTimeout(()=>{
+
+
+map.invalidateSize();
+
+
+},200);
+
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+// =====================
+// DONNÉES LOCALES
+// =====================
+
+
+
+let activites =
+
+JSON.parse(
+
+localStorage.getItem("activitesTCX")
+
+)
+
+|| [];
+
+
+
+
+let lignes=[];
+  // =====================
+// CARTE LEAFLET
+// =====================
+
+
+let map = L.map("map")
+
+.setView([20,0],2);
+
 
 
 
@@ -159,34 +614,72 @@ attribution:"© OpenStreetMap"
 
 
 
-let activites =
-
-JSON.parse(localStorage.getItem("activitesTCX")) || [];
 
 
-
-let lignes=[];
-
-
-
+// =====================
+// COULEUR DES TRAJETS
+// =====================
 
 
 function couleur(sport){
 
 
-if(sport=="Vélo")
+
+sport=
+
+String(sport).toLowerCase();
+
+
+
+
+
+if(
+
+sport.includes("bike") ||
+
+sport.includes("vélo") ||
+
+sport.includes("cycling")
+
+)
+
 return "yellow";
 
 
-if(sport=="Course")
+
+
+
+if(
+
+sport.includes("run") ||
+
+sport.includes("course")
+
+)
+
 return "orange";
 
 
-if(sport=="Marche")
+
+
+
+if(
+
+sport.includes("walk") ||
+
+sport.includes("marche")
+
+)
+
 return "blue";
 
 
+
+
+
 return "red";
+
+
 
 }
 
@@ -194,13 +687,40 @@ return "red";
 
 
 
+
+
+
+
+// =====================
+// FORMAT DU TEMPS
+// =====================
+
+
 function tempsTexte(sec){
 
 
-let h=Math.floor(sec/3600);
+
+sec=
+
+Number(sec)||0;
 
 
-let m=Math.floor((sec%3600)/60);
+
+let h=
+
+Math.floor(sec/3600);
+
+
+
+let m=
+
+Math.floor(
+
+(sec%3600)/60
+
+);
+
+
 
 
 return h+" h "+m+" min";
@@ -213,7 +733,15 @@ return h+" h "+m+" min";
 
 
 
-function ouvrirTCX(){
+
+
+
+// =====================
+// OUVRIR TCX
+// =====================
+
+
+window.ouvrirTCX=function(){
 
 
 document
@@ -223,7 +751,8 @@ document
 .click();
 
 
-}
+
+};
 
 
 
@@ -232,77 +761,22 @@ document
 
 
 
-function afficherTrajets(){
 
 
-lignes=[];
-
-
-
-activites.forEach((a,index)=>{
-
-
-let ligne=L.polyline(
-
-a.points,
-
-{
-
-color:couleur(a.sport),
-
-weight:4
-
-}
-
-).addTo(map);
-
-
-
-lignes.push(ligne);
-
-
-
-ligne.bindPopup(`
-
-
-<b>${a.sport}</b>
-
-<br>
-
-📅 ${a.date}
-
-<br>
-
-📏 ${a.distance} km
-
-<br>
-
-⏱ ${tempsTexte(a.temps)}
-
-
-`);
-
-
-
-});
-
-
-
-}
-
-
-
-
-
-
-
+// =====================
+// IMPORT DU FICHIER TCX
+// =====================
 
 
 document
 
 .getElementById("fichier")
 
-.addEventListener("change",function(e){
+.addEventListener(
+
+"change",
+
+function(e){
 
 
 
@@ -311,6 +785,7 @@ for(let fichier of e.target.files){
 
 
 let lecteur=new FileReader();
+
 
 
 
@@ -334,32 +809,63 @@ lecteur.result,
 
 
 
-let sport="Vélo";
+console.log(
+
+"TCX chargé"
+
+);
 
 
+
+
+
+// La lecture complète du TCX arrive partie 4
+
+
+
+};
+
+
+
+
+lecteur.readAsText(fichier);
+
+
+
+}
+
+
+
+}
+
+);
+  // =====================
+// LECTURE TCX
+// =====================
+
+
+let sport="Autre";
 
 
 
 let activity=
 
-xml.getElementsByTagName("Activity")[0];
+xml.getElementsByTagName(
+
+"Activity"
+
+)[0];
 
 
 
 if(activity){
 
 
-let type=
+sport=
 
-activity.getAttribute("Sport");
+activity.getAttribute("Sport")
 
-
-
-if(type){
-
-sport=type;
-
-}
+||"Autre";
 
 
 }
@@ -375,16 +881,29 @@ let date="Inconnue";
 
 let id=
 
-xml.getElementsByTagName("Id")[0];
+xml.getElementsByTagName(
+
+"Id"
+
+)[0];
 
 
 
 if(id){
 
-date=id.textContent.substring(0,10);
+
+date=
+
+id.textContent.substring(
+
+0,
+
+10
+
+);
+
 
 }
-
 
 
 
@@ -395,13 +914,19 @@ let distance=0;
 
 
 
-let d=
+let distances=
 
-xml.getElementsByTagName("DistanceMeters");
+xml.getElementsByTagName(
+
+"DistanceMeters"
+
+);
 
 
 
-if(d.length){
+
+
+if(distances.length){
 
 
 
@@ -411,7 +936,9 @@ distance=
 
 parseFloat(
 
-d[d.length-1].textContent
+distances[distances.length-1]
+
+.textContent
 
 )
 
@@ -434,13 +961,19 @@ let temps=0;
 
 
 
-let t=
+let tempsXML=
 
-xml.getElementsByTagName("TotalTimeSeconds");
+xml.getElementsByTagName(
+
+"TotalTimeSeconds"
+
+);
 
 
 
-if(t.length){
+
+
+if(tempsXML.length){
 
 
 
@@ -448,9 +981,10 @@ temps=
 
 parseFloat(
 
-t[0].textContent
+tempsXML[0].textContent
 
 );
+
 
 
 }
@@ -461,13 +995,27 @@ t[0].textContent
 
 
 
+
+
+// =====================
+// POINTS GPS
+// =====================
+
+
 let points=[];
 
 
 
 let positions=
 
-xml.getElementsByTagName("Position");
+xml.getElementsByTagName(
+
+"Position"
+
+);
+
+
+
 
 
 
@@ -477,12 +1025,24 @@ for(let p of positions){
 
 let lat=
 
-p.getElementsByTagName("LatitudeDegrees")[0];
+p.getElementsByTagName(
+
+"LatitudeDegrees"
+
+)[0];
+
 
 
 let lon=
 
-p.getElementsByTagName("LongitudeDegrees")[0];
+p.getElementsByTagName(
+
+"LongitudeDegrees"
+
+)[0];
+
+
+
 
 
 
@@ -492,23 +1052,39 @@ if(lat && lon){
 
 points.push([
 
-parseFloat(lat.textContent),
 
-parseFloat(lon.textContent)
+parseFloat(
+
+lat.textContent
+
+),
+
+
+parseFloat(
+
+lon.textContent
+
+)
+
 
 ]);
 
 
-}
-
-
 
 }
 
 
 
+}
 
 
+
+
+
+
+
+
+// Calcul distance si absente
 
 
 if(distance==0){
@@ -519,11 +1095,21 @@ let total=0;
 
 
 
-for(let i=1;i<points.length;i++){
+for(
+
+let i=1;
+
+i<points.length;
+
+i++
+
+){
 
 
 
-total += map.distance(
+total +=
+
+map.distance(
 
 points[i-1],
 
@@ -537,13 +1123,27 @@ points[i]
 
 
 
-distance=(total/1000).toFixed(2);
+distance=
+
+(
+
+total/1000
+
+).toFixed(2);
+
 
 
 }
 
 
 
+
+
+
+
+// =====================
+// ENREGISTREMENT LOCAL
+// =====================
 
 
 
@@ -566,6 +1166,7 @@ temps:Number(temps),
 points:points
 
 
+
 };
 
 
@@ -583,7 +1184,11 @@ localStorage.setItem(
 
 "activitesTCX",
 
-JSON.stringify(activites)
+JSON.stringify(
+
+activites
+
+)
 
 );
 
@@ -592,25 +1197,41 @@ JSON.stringify(activites)
 
 
 
-let ligne=L.polyline(
+
+// =====================
+// AFFICHAGE CARTE
+// =====================
+
+
+
+let ligne=
+
+L.polyline(
 
 points,
 
 {
 
-color:couleur(sport),
+
+color:
+
+couleur(sport),
+
 
 weight:4
 
+
 }
 
-).addTo(map);
+)
+
+.addTo(map);
+
 
 
 
 
 lignes.push(ligne);
-
 
 
 
@@ -640,82 +1261,116 @@ ligne.bindPopup(`
 
 
 
+
+
+if(points.length){
+
+
 map.fitBounds(points);
 
 
 
-
-
-
-/*
-
-Plus tard ici :
-
-- envoyer les statistiques dans Firebase
-- ajouter XP
-- mettre à jour le classement
-
-*/
-
-
-
-};
-
-
-
-lecteur.readAsText(fichier);
-
-
-
 }
 
 
 
-});
-  // Sélection des trajets visibles
-
-function selectionnerTrajets(){
-
-
-let zone = map.getBounds();
-
-
-let selection=[];
 
 
 
-activites.forEach((a,index)=>{
+console.log(
 
-
-for(let point of a.points){
-
-
-if(zone.contains(point)){
-
-
-selection.push(index);
-
-
-break;
-
-
-}
-
-
-}
-
-
-});
-
-
-
-alert(
-
-selection.length +
-
-" trajet(s) sélectionné(s)"
+"Trajet ajouté"
 
 );
+  // =====================
+// AFFICHER LES TRAJETS EXISTANTS
+// =====================
+
+
+function afficherTrajets(){
+
+
+
+// Supprimer les anciennes lignes
+
+lignes.forEach(ligne=>{
+
+
+map.removeLayer(ligne);
+
+
+});
+
+
+
+lignes=[];
+
+
+
+
+
+
+activites.forEach(a=>{
+
+
+
+let ligne=
+
+L.polyline(
+
+a.points,
+
+{
+
+
+color:
+
+couleur(a.sport),
+
+
+weight:4
+
+
+}
+
+)
+
+.addTo(map);
+
+
+
+
+
+lignes.push(ligne);
+
+
+
+
+
+ligne.bindPopup(`
+
+
+<b>${a.sport}</b>
+
+<br>
+
+📅 ${a.date}
+
+<br>
+
+📏 ${a.distance} km
+
+<br>
+
+⏱ ${tempsTexte(a.temps)}
+
+
+`);
+
+
+
+
+});
 
 
 
@@ -727,14 +1382,40 @@ selection.length +
 
 
 
-function effacer(){
+
+
+// Charger au démarrage
+
+
+afficherTrajets();
+
+
+
+
+
+
+
+
+
+// =====================
+// EFFACER
+// =====================
+
+
+
+window.effacer=function(){
+
 
 
 if(confirm(
 
-"Effacer toutes les activités ?"
+"Effacer tous les trajets ?"
 
 )){
+
+
+
+activites=[];
 
 
 
@@ -746,73 +1427,1745 @@ localStorage.removeItem(
 
 
 
-location.reload();
-
-
-
-}
-
-
-}
-
-
-
-
-
-
-
-
-// Chargement automatique des trajets sauvegardés
-
 afficherTrajets();
 
 
 
+}
+
+
+
+};
 
 
 
 
-/*
 
-Fonction prête pour Firebase
 
-Elle sera utilisée quand l'utilisateur sera connecté.
 
-Exemple :
 
-enregistrerStatistiquesFirebase({
 
-distance: distance,
+// =====================
+// SÉLECTION DES TRAJETS
+// =====================
 
-temps: temps,
 
-sport: sport
+
+window.selectionnerTrajets=function(){
+
+
+
+let zone=
+
+map.getBounds();
+
+
+
+let selection=[];
+
+
+
+
+
+activites.forEach(a=>{
+
+
+
+for(let point of a.points){
+
+
+
+if(zone.contains(point)){
+
+
+
+selection.push(a);
+
+
+
+break;
+
+
+}
+
+
+
+}
+
+
 
 });
 
 
 
-*/
 
 
 
 
-async function enregistrerStatistiquesFirebase(donnees){
+if(selection.length==0){
 
 
-console.log(
 
-"Statistiques à envoyer :",
+alert(
 
-donnees
+"Aucun trajet dans la zone visible"
 
 );
 
 
-// Ici on ajoutera Firestore
+
+return;
+
 
 
 }
+
+
+
+
+
+
+
+let texte="";
+
+
+
+
+
+selection.forEach(a=>{
+
+
+
+texte +=
+
+
+
+`
+
+<b>${a.sport}</b>
+
+<br>
+
+📏 ${a.distance} km
+
+<br>
+
+⏱ ${tempsTexte(a.temps)}
+
+<hr>
+
+`;
+
+
+
+});
+
+
+
+
+
+
+let fenetre=
+
+window.open(
+
+"",
+
+"trajets",
+
+"width=400,height=500"
+
+);
+
+
+
+
+
+
+fenetre.document.write(
+
+
+
+`
+
+<h2>Trajets sélectionnés</h2>
+
+${texte}
+
+`
+
+);
+
+
+
+};
+  // =====================
+// CALCUL STATISTIQUES
+// =====================
+
+
+function calculerStatistiques(liste){
+
+
+
+let km=0;
+
+
+let temps=0;
+
+
+let nombre=0;
+
+
+
+
+
+
+liste.forEach(a=>{
+
+
+
+km += Number(a.distance)||0;
+
+
+temps += Number(a.temps)||0;
+
+
+nombre++;
+
+
+
+});
+
+
+
+
+
+
+return {
+
+
+km:km,
+
+
+temps:temps,
+
+
+nombre:nombre
+
+
+
+};
+
+
+
+}
+
+
+
+
+
+
+
+
+
+function afficherStatistiques(liste){
+
+
+
+let stats=
+
+calculerStatistiques(liste);
+
+
+
+
+
+
+document.getElementById(
+
+"resultatStats"
+
+).innerHTML=
+
+
+
+`
+
+<div class="carte">
+
+
+<h3>📊 Résultats</h3>
+
+
+🚴 Activités :
+
+${stats.nombre}
+
+
+<br><br>
+
+
+📏 Distance :
+
+${stats.km.toFixed(2)} km
+
+
+<br><br>
+
+
+⏱ Temps :
+
+${tempsTexte(stats.temps)}
+
+
+
+</div>
+
+
+`;
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================
+// FILTRES
+// =====================
+
+
+
+window.filtrerStats=function(type){
+
+
+
+let maintenant=
+
+new Date();
+
+
+
+
+
+let liste=
+
+activites.filter(a=>{
+
+
+
+let date=
+
+new Date(a.date);
+
+
+
+
+
+
+
+if(type=="toujours"){
+
+
+
+return true;
+
+
+
+}
+
+
+
+
+
+
+
+if(type=="annee"){
+
+
+
+return date.getFullYear()
+
+===
+
+maintenant.getFullYear();
+
+
+
+}
+
+
+
+
+
+
+
+if(type=="mois"){
+
+
+
+return (
+
+date.getMonth()
+
+===
+
+maintenant.getMonth()
+
+&&
+
+
+date.getFullYear()
+
+===
+
+maintenant.getFullYear()
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+if(type=="semaine"){
+
+
+
+let difference=
+
+maintenant-date;
+
+
+
+return difference >=0 &&
+
+difference <=
+
+7*24*60*60*1000;
+
+
+
+}
+
+
+
+
+
+
+
+if(type=="jour"){
+
+
+
+return a.date ===
+
+maintenant.toISOString()
+
+.substring(0,10);
+
+
+
+}
+
+
+
+
+
+
+
+return false;
+
+
+
+});
+
+
+
+
+
+
+afficherStatistiques(liste);
+
+
+
+};
+
+
+
+
+
+
+
+
+// Afficher au départ
+
+
+afficherStatistiques(activites);
+  // =====================
+// PROFIL UTILISATEUR
+// =====================
+
+
+
+async function chargerProfil(){
+
+
+
+if(!utilisateur)
+
+return;
+
+
+
+
+
+
+let profil =
+
+await getDoc(
+
+
+doc(
+
+db,
+
+"utilisateurs",
+
+utilisateur.uid
+
+)
+
+
+);
+
+
+
+
+
+
+
+if(profil.exists()){
+
+
+
+let donnees=
+
+profil.data();
+
+
+
+
+
+document.getElementById(
+
+"nomProfil"
+
+).value =
+
+donnees.nom || "";
+
+
+
+
+
+
+
+document.getElementById(
+
+"infosProfil"
+
+).innerHTML=
+
+
+
+`
+
+📧 ${utilisateur.email}
+
+<br><br>
+
+👤 ${donnees.nom || "Aucun nom"}
+
+<br><br>
+
+⭐ Niveau :
+
+${donnees.niveau || 1}
+
+<br><br>
+
+✨ XP :
+
+${donnees.xp || 0}
+
+
+
+`;
+
+
+
+}
+
+else{
+
+
+
+document.getElementById(
+
+"infosProfil"
+
+).innerHTML=
+
+
+
+`
+
+📧 ${utilisateur.email}
+
+`;
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================
+// SAUVEGARDER PROFIL
+// =====================
+
+
+
+window.sauvegarderProfil = async function(){
+
+
+
+if(!utilisateur){
+
+
+
+alert(
+
+"Connecte-toi d'abord"
+
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+
+
+
+await setDoc(
+
+
+
+doc(
+
+db,
+
+"utilisateurs",
+
+utilisateur.uid
+
+),
+
+
+
+{
+
+
+email:
+
+utilisateur.email,
+
+
+nom:
+
+document.getElementById(
+
+"nomProfil"
+
+).value,
+
+
+niveau:
+
+1,
+
+
+xp:
+
+0
+
+
+
+},
+
+
+
+{
+
+
+merge:true
+
+
+}
+
+
+
+);
+
+
+
+
+
+
+alert(
+
+"Profil enregistré ✅"
+
+);
+
+
+
+chargerProfil();
+
+
+
+};
+
+
+
+
+
+
+
+
+
+// =====================
+// CONNEXION
+// =====================
+
+
+
+window.creerCompte = async function(email,mdp){
+
+
+
+try{
+
+
+
+await createUserWithEmailAndPassword(
+
+auth,
+
+email,
+
+mdp
+
+);
+
+
+
+alert(
+
+"Compte créé"
+
+);
+
+
+
+}
+
+catch(e){
+
+
+
+alert(
+
+e.message
+
+);
+
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+window.seConnecter = async function(email,mdp){
+
+
+
+try{
+
+
+
+await signInWithEmailAndPassword(
+
+auth,
+
+email,
+
+mdp
+
+);
+
+
+
+alert(
+
+"Connecté"
+
+);
+
+
+
+}
+
+catch(e){
+
+
+
+alert(
+
+e.message
+
+);
+
+
+
+}
+
+
+
+};
+
+
+
+
+
+
+
+
+window.deconnexion = async function(){
+
+
+
+await signOut(auth);
+
+
+
+location.reload();
+
+
+
+};
+  // =====================
+// AJOUTER UN AMI
+// =====================
+
+
+window.ajouterAmi = async function(emailAmi){
+
+
+
+if(!utilisateur){
+
+
+
+alert(
+
+"Tu dois être connecté"
+
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+
+
+
+if(!emailAmi){
+
+
+
+alert(
+
+"Entre un email"
+
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+
+
+
+await addDoc(
+
+
+collection(
+
+db,
+
+"utilisateurs",
+
+utilisateur.uid,
+
+"amis"
+
+),
+
+
+
+{
+
+
+email:
+
+emailAmi
+
+
+}
+
+
+
+);
+
+
+
+
+
+
+
+alert(
+
+"Ami ajouté ✅"
+
+);
+
+
+
+
+
+afficherAmis();
+
+
+
+};
+
+
+
+
+
+
+
+
+
+// =====================
+// AFFICHER LES AMIS
+// =====================
+
+
+
+async function afficherAmis(){
+
+
+
+if(!utilisateur)
+
+return;
+
+
+
+
+
+
+
+let zone=
+
+document.getElementById(
+
+"listeAmis"
+
+);
+
+
+
+zone.innerHTML="";
+
+
+
+
+
+
+let amis=
+
+await getDocs(
+
+
+collection(
+
+db,
+
+"utilisateurs",
+
+utilisateur.uid,
+
+"amis"
+
+)
+
+
+
+);
+
+
+
+
+
+
+amis.forEach(ami=>{
+
+
+
+let bouton=
+
+document.createElement(
+
+"button"
+
+);
+
+
+
+
+
+bouton.innerHTML=
+
+"👤 "+ami.data().email;
+
+
+
+
+
+
+bouton.onclick=function(){
+
+
+
+voirAmi(
+
+ami.data().email
+
+);
+
+
+
+};
+
+
+
+
+
+
+zone.appendChild(bouton);
+
+
+
+});
+
+
+
+}
+
+
+
+
+
+
+
+
+// Charger automatiquement
+
+
+setTimeout(()=>{
+
+
+afficherAmis();
+
+
+
+},2000);
+  // =====================
+// VOIR UN AMI
+// =====================
+
+
+window.voirAmi = async function(emailAmi){
+
+
+
+let utilisateurs =
+
+await getDocs(
+
+collection(
+
+db,
+
+"utilisateurs"
+
+)
+
+);
+
+
+
+
+
+let ami=null;
+
+
+
+
+
+utilisateurs.forEach(u=>{
+
+
+
+if(u.data().email===emailAmi){
+
+
+
+ami={
+
+
+id:u.id,
+
+
+data:u.data()
+
+
+
+};
+
+
+
+}
+
+
+
+});
+
+
+
+
+
+
+
+if(!ami){
+
+
+
+alert(
+
+"Ami introuvable"
+
+);
+
+
+
+return;
+
+
+
+}
+
+
+
+
+
+
+
+afficherComparaison(ami);
+
+
+
+};
+
+
+
+
+
+
+
+
+
+// =====================
+// COMPARAISON
+// =====================
+
+
+function afficherComparaison(ami){
+
+
+
+let mesKm=0;
+
+
+let mesTemps=0;
+
+
+
+
+
+
+activites.forEach(a=>{
+
+
+
+mesKm += Number(a.distance)||0;
+
+
+mesTemps += Number(a.temps)||0;
+
+
+
+});
+
+
+
+
+
+
+
+let kmAmi=
+
+Number(
+
+ami.data.distanceTotale
+
+)
+
+||0;
+
+
+
+
+
+
+let tempsAmi=
+
+Number(
+
+ami.data.tempsTotal
+
+)
+
+||0;
+
+
+
+
+
+
+let difference=
+
+mesKm-kmAmi;
+
+
+
+
+
+
+document.getElementById(
+
+"resultatStats"
+
+).innerHTML=
+
+
+
+`
+
+<div class="carte">
+
+
+<h2>👤 ${ami.data.nom || ami.data.email}</h2>
+
+
+📏 Son total :
+
+${kmAmi.toFixed(2)} km
+
+
+<br><br>
+
+
+📏 Ton total :
+
+${mesKm.toFixed(2)} km
+
+
+<br><br>
+
+
+⚖️ Différence :
+
+${difference.toFixed(2)} km
+
+
+<br><br>
+
+
+⏱ Son temps :
+
+${tempsTexte(tempsAmi)}
+
+
+<br><br>
+
+
+⏱ Ton temps :
+
+${tempsTexte(mesTemps)}
+
+
+
+</div>
+
+
+`;
+
+
+
+
+
+ouvrirPage("stats");
+
+
+
+}
+
+
+
+
+
+
+
+
+
+// =====================
+// CLASSEMENT
+// =====================
+
+
+window.afficherClassement = async function(){
+
+
+
+let classement=[];
+
+
+
+
+
+
+let mesKm=0;
+
+
+
+activites.forEach(a=>{
+
+
+
+mesKm += Number(a.distance)||0;
+
+
+
+});
+
+
+
+
+
+
+
+classement.push({
+
+
+
+nom:"Moi",
+
+
+km:mesKm
+
+
+
+});
+
+
+
+
+
+
+
+
+let utilisateurs=
+
+await getDocs(
+
+collection(
+
+db,
+
+"utilisateurs"
+
+)
+
+);
+
+
+
+
+
+
+
+utilisateurs.forEach(u=>{
+
+
+
+classement.push({
+
+
+
+nom:
+
+u.data().nom || u.data().email,
+
+
+km:
+
+u.data().distanceTotale || 0
+
+
+
+});
+
+
+
+});
+
+
+
+
+
+
+
+
+
+classement.sort(
+
+(a,b)=>b.km-a.km
+
+);
+
+
+
+
+
+
+
+let texte="🏆 Classement<br><br>";
+
+
+
+
+
+classement.forEach((p,i)=>{
+
+
+
+texte +=
+
+
+
+`
+
+<div class="carte">
+
+
+${i+1} - ${p.nom}
+
+
+<br>
+
+
+📏 ${Number(p.km).toFixed(2)} km
+
+
+</div>
+
+
+`;
+
+
+
+});
+
+
+
+
+
+
+document.getElementById(
+
+"listeClassement"
+
+).innerHTML=texte;
+
+
+
+};
+
+
+
+
+
+
+
+
+
+// =====================
+// XP ET NIVEAU
+// =====================
+
+
+
+function calculerNiveau(xp){
+
+
+
+return Math.floor(
+
+xp/1000
+
+)+1;
+
+
+
+}
+
+
+
+
+
+
+
+async function ajouterXP(gain){
+
+
+
+if(!utilisateur)
+
+return;
+
+
+
+
+
+
+let ref=
+
+doc(
+
+db,
+
+"utilisateurs",
+
+utilisateur.uid
+
+);
+
+
+
+
+
+
+let profil=
+
+await getDoc(ref);
+
+
+
+
+
+let xp=0;
+
+
+
+if(profil.exists()){
+
+
+
+xp=
+
+profil.data().xp || 0;
+
+
+
+}
+
+
+
+
+
+
+xp += gain;
+
+
+
+
+
+
+
+await setDoc(
+
+ref,
+
+{
+
+
+xp:xp,
+
+
+niveau:
+
+calculerNiveau(xp)
+
+
+
+},
+
+
+
+{
+
+merge:true
+
+}
+
+
+
+);
+
+
+
+}
+  <!-- =====================
+FIN DU JAVASCRIPT
+===================== -->
+
+
+<script>
+
+
+// Vérifier que la carte se redimensionne correctement
+
+
+setTimeout(()=>{
+
+
+if(typeof map !== "undefined"){
+
+
+map.invalidateSize();
+
+
+
+}
+
+
+},1000);
+
+
+
+
+
+// Afficher les statistiques au démarrage
+
+
+setTimeout(()=>{
+
+
+if(typeof afficherStatistiques === "function"){
+
+
+afficherStatistiques(activites);
+
+
+}
+
+
+
+},1500);
 
 
 
@@ -821,6 +3174,8 @@ donnees
 </script>
 
 
+
 </body>
+
 
 </html>
