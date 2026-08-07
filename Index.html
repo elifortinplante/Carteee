@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Map Vélo</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+}
+
+
+button{
+
+padding:12px;
+margin:5px;
+font-size:16px;
+
+}
+
+
+#map{
+
+height:85vh;
+
+}
+
+
+
+</style>
+
+
+</head>
+
+
+<body>
+
+
+<button onclick="ouvrirTCX()">
+📂 Importer TCX
+</button>
+
+
+<button onclick="location.href='stats.html'">
+📊 Statistiques
+</button>
+
+
+<button onclick="location.href='amis.html'">
+👥 Amis
+</button>
+
+
+<button onclick="location.href='classement.html'">
+🏆 Classement
+</button>
+
+
+<button onclick="effacer()">
+🗑️ Effacer
+</button>
+
+
+
+<input 
+id="fichier" 
+type="file" 
+accept=".tcx"
+multiple
+style="display:none"
+>
+
+
+
+<div id="map"></div>
+
+
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+
+<script type="module">
+
+
+// Firebase
+
+import { initializeApp } 
+from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+
+
+import { getFirestore }
+from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+
+
+const firebaseConfig = {
+
+
+apiKey: "TON_API_KEY",
+
+authDomain: "map-velo-f63ad.firebaseapp.com",
+
+projectId: "map-velo-f63ad",
+
+storageBucket: "map-velo-f63ad.firebasestorage.app",
+
+messagingSenderId: "915926626440",
+
+appId: "1:915926626440:web:96868d343fce5c5d2a2f3d"
+
+
+};
+
+
+
+
+const app = initializeApp(firebaseConfig);
+
+
+
+const db = getFirestore(app);
+
+
+
+console.log("Firebase connecté");
+
+
+
+</script>
+let map = L.map("map").setView([20,0],2);
+
+
+
+L.tileLayer(
+
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+{
+
+maxZoom:19,
+
+attribution:"© OpenStreetMap"
+
+}
+
+).addTo(map);
+
+
+
+
+
+let activites =
+
+JSON.parse(localStorage.getItem("activitesTCX")) || [];
+
+
+
+let lignes=[];
+
+
+
+
+
+function couleur(sport){
+
+
+if(sport=="Vélo")
+return "yellow";
+
+
+if(sport=="Course")
+return "orange";
+
+
+if(sport=="Marche")
+return "blue";
+
+
+return "red";
+
+}
+
+
+
+
+
+function tempsTexte(sec){
+
+
+let h=Math.floor(sec/3600);
+
+
+let m=Math.floor((sec%3600)/60);
+
+
+return h+" h "+m+" min";
+
+
+}
+
+
+
+
+
+
+function ouvrirTCX(){
+
+
+document
+
+.getElementById("fichier")
+
+.click();
+
+
+}
+
+
+
+
+
+
+
+
+function afficherTrajets(){
+
+
+lignes=[];
+
+
+
+activites.forEach((a,index)=>{
+
+
+let ligne=L.polyline(
+
+a.points,
+
+{
+
+color:couleur(a.sport),
+
+weight:4
+
+}
+
+).addTo(map);
+
+
+
+lignes.push(ligne);
+
+
+
+ligne.bindPopup(`
+
+
+<b>${a.sport}</b>
+
+<br>
+
+📅 ${a.date}
+
+<br>
+
+📏 ${a.distance} km
+
+<br>
+
+⏱ ${tempsTexte(a.temps)}
+
+
+`);
+
+
+
+});
+
+
+
+}
+
+
+
+
+
+
+
+
+
+document
+
+.getElementById("fichier")
+
+.addEventListener("change",function(e){
+
+
+
+for(let fichier of e.target.files){
+
+
+
+let lecteur=new FileReader();
+
+
+
+lecteur.onload=function(){
+
+
+
+let xml =
+
+new DOMParser()
+
+.parseFromString(
+
+lecteur.result,
+
+"text/xml"
+
+);
+
+
+
+
+
+let sport="Vélo";
+
+
+
+
+
+let activity=
+
+xml.getElementsByTagName("Activity")[0];
+
+
+
+if(activity){
+
+
+let type=
+
+activity.getAttribute("Sport");
+
+
+
+if(type){
+
+sport=type;
+
+}
+
+
+}
+
+
+
+
+
+
+let date="Inconnue";
+
+
+
+let id=
+
+xml.getElementsByTagName("Id")[0];
+
+
+
+if(id){
+
+date=id.textContent.substring(0,10);
+
+}
+
+
+
+
+
+
+
+let distance=0;
+
+
+
+let d=
+
+xml.getElementsByTagName("DistanceMeters");
+
+
+
+if(d.length){
+
+
+
+distance=
+
+(
+
+parseFloat(
+
+d[d.length-1].textContent
+
+)
+
+/1000
+
+).toFixed(2);
+
+
+
+}
+
+
+
+
+
+
+
+
+let temps=0;
+
+
+
+let t=
+
+xml.getElementsByTagName("TotalTimeSeconds");
+
+
+
+if(t.length){
+
+
+
+temps=
+
+parseFloat(
+
+t[0].textContent
+
+);
+
+
+}
+
+
+
+
+
+
+
+let points=[];
+
+
+
+let positions=
+
+xml.getElementsByTagName("Position");
+
+
+
+for(let p of positions){
+
+
+
+let lat=
+
+p.getElementsByTagName("LatitudeDegrees")[0];
+
+
+let lon=
+
+p.getElementsByTagName("LongitudeDegrees")[0];
+
+
+
+if(lat && lon){
+
+
+
+points.push([
+
+parseFloat(lat.textContent),
+
+parseFloat(lon.textContent)
+
+]);
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+if(distance==0){
+
+
+
+let total=0;
+
+
+
+for(let i=1;i<points.length;i++){
+
+
+
+total += map.distance(
+
+points[i-1],
+
+points[i]
+
+);
+
+
+
+}
+
+
+
+distance=(total/1000).toFixed(2);
+
+
+}
+
+
+
+
+
+
+let activite={
+
+
+
+sport:sport,
+
+
+date:date,
+
+
+distance:Number(distance),
+
+
+temps:Number(temps),
+
+
+points:points
+
+
+};
+
+
+
+
+
+
+activites.push(activite);
+
+
+
+
+
+localStorage.setItem(
+
+"activitesTCX",
+
+JSON.stringify(activites)
+
+);
+
+
+
+
+
+
+let ligne=L.polyline(
+
+points,
+
+{
+
+color:couleur(sport),
+
+weight:4
+
+}
+
+).addTo(map);
+
+
+
+
+lignes.push(ligne);
+
+
+
+
+
+
+ligne.bindPopup(`
+
+
+<b>${sport}</b>
+
+<br>
+
+📅 ${date}
+
+<br>
+
+📏 ${distance} km
+
+<br>
+
+⏱ ${tempsTexte(temps)}
+
+
+`);
+
+
+
+
+
+map.fitBounds(points);
+
+
+
+
+
+
+/*
+
+Plus tard ici :
+
+- envoyer les statistiques dans Firebase
+- ajouter XP
+- mettre à jour le classement
+
+*/
+
+
+
+};
+
+
+
+lecteur.readAsText(fichier);
+
+
+
+}
+
+
+
+});
+  // Sélection des trajets visibles
+
+function selectionnerTrajets(){
+
+
+let zone = map.getBounds();
+
+
+let selection=[];
+
+
+
+activites.forEach((a,index)=>{
+
+
+for(let point of a.points){
+
+
+if(zone.contains(point)){
+
+
+selection.push(index);
+
+
+break;
+
+
+}
+
+
+}
+
+
+});
+
+
+
+alert(
+
+selection.length +
+
+" trajet(s) sélectionné(s)"
+
+);
+
+
+
+}
+
+
+
+
+
+
+
+function effacer(){
+
+
+if(confirm(
+
+"Effacer toutes les activités ?"
+
+)){
+
+
+
+localStorage.removeItem(
+
+"activitesTCX"
+
+);
+
+
+
+location.reload();
+
+
+
+}
+
+
+}
+
+
+
+
+
+
+
+
+// Chargement automatique des trajets sauvegardés
+
+afficherTrajets();
+
+
+
+
+
+
+
+/*
+
+Fonction prête pour Firebase
+
+Elle sera utilisée quand l'utilisateur sera connecté.
+
+Exemple :
+
+enregistrerStatistiquesFirebase({
+
+distance: distance,
+
+temps: temps,
+
+sport: sport
+
+});
+
+
+
+*/
+
+
+
+
+async function enregistrerStatistiquesFirebase(donnees){
+
+
+console.log(
+
+"Statistiques à envoyer :",
+
+donnees
+
+);
+
+
+// Ici on ajoutera Firestore
+
+
+}
+
+
+
+
+
+</script>
+
+
+</body>
+
+</html>
