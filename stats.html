@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Statistiques TCX</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+button{
+padding:12px;
+margin:5px;
+font-size:16px;
+}
+
+.carte{
+background:#f2f2f2;
+border-radius:15px;
+padding:20px;
+margin:15px auto;
+width:80%;
+max-width:400px;
+font-size:18px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<h1>📊 Statistiques</h1>
+
+
+<button onclick="filtrer('toujours')">
+Toujours
+</button>
+
+<button onclick="filtrer('annee')">
+Année
+</button>
+
+<button onclick="filtrer('mois')">
+Mois
+</button>
+
+<button onclick="filtrer('semaine')">
+Semaine
+</button>
+
+<button onclick="filtrer('jour')">
+Jours
+</button>
+
+
+<br>
+
+
+<button onclick="location.href='index.html'">
+🗺️ Carte
+</button>
+
+
+<div id="resultat"></div>
+
+
+
+<script>
+
+
+let activites =
+JSON.parse(localStorage.getItem("activitesTCX")) || [];
+
+
+
+
+
+function afficherTemps(sec){
+
+sec = Number(sec) || 0;
+
+
+let heures =
+Math.floor(sec / 3600);
+
+
+let minutes =
+Math.floor((sec % 3600) / 60);
+
+
+return heures + " h " + minutes + " min";
+
+}
+
+
+
+
+
+
+
+
+function filtrer(type){
+
+    let maintenant = new Date();
+
+    let liste = activites.filter(a=>{
+
+
+        let date = new Date(a.date);
+
+
+        if(type=="toujours"){
+            return true;
+        }
+
+
+        if(type=="annee"){
+
+            return date.getFullYear()
+            ==
+            maintenant.getFullYear();
+
+        }
+
+
+        if(type=="mois"){
+
+            return (
+
+                date.getMonth()
+                ==
+                maintenant.getMonth()
+
+                &&
+
+                date.getFullYear()
+                ==
+                maintenant.getFullYear()
+
+            );
+
+        }
+
+
+        if(type=="semaine"){
+
+
+            let difference =
+            maintenant.getTime()
+            -
+            date.getTime();
+
+
+            return difference >= 0 &&
+            difference <=
+            7*24*60*60*1000;
+
+
+        }
+
+
+
+        if(type=="jour"){
+
+
+            let aujourdhui =
+            maintenant.toLocaleDateString("sv-SE");
+
+
+            return a.date === aujourdhui;
+
+
+        }
+
+
+        return false;
+
+
+    });
+
+
+    calculer(liste);
+
+}
+
+
+
+
+
+
+
+
+
+function calculer(liste){
+
+
+
+let stats = {
+
+
+"Vélo":{
+km:0,
+temps:0
+},
+
+
+"Marche":{
+km:0,
+temps:0
+},
+
+
+"Course":{
+km:0,
+temps:0
+}
+
+
+};
+
+
+
+
+
+
+
+liste.forEach(a=>{
+
+
+if(stats[a.sport]){
+
+
+stats[a.sport].km +=
+Number(a.distance) || 0;
+
+
+stats[a.sport].temps +=
+Number(a.temps) || 0;
+
+
+}
+
+
+});
+
+
+
+
+
+
+
+
+document.getElementById("resultat").innerHTML = `
+
+
+<div class="carte">
+
+🚲 <b>Vélo</b><br><br>
+
+📏 ${stats["Vélo"].km.toFixed(2)} km
+
+<br>
+
+⏱ ${afficherTemps(stats["Vélo"].temps)}
+
+</div>
+
+
+
+<div class="carte">
+
+🚶 <b>Marche</b><br><br>
+
+📏 ${stats["Marche"].km.toFixed(2)} km
+
+<br>
+
+⏱ ${afficherTemps(stats["Marche"].temps)}
+
+</div>
+
+
+
+
+<div class="carte">
+
+🏃 <b>Course</b><br><br>
+
+📏 ${stats["Course"].km.toFixed(2)} km
+
+<br>
+
+⏱ ${afficherTemps(stats["Course"].temps)}
+
+</div>
+
+
+
+<div class="carte">
+
+📊 <b>Total</b><br><br>
+
+📏 ${(
+stats["Vélo"].km +
+stats["Marche"].km +
+stats["Course"].km
+).toFixed(2)} km
+
+
+<br>
+
+
+⏱ ${afficherTemps(
+
+stats["Vélo"].temps +
+stats["Marche"].temps +
+stats["Course"].temps
+
+)}
+
+
+</div>
+
+
+`;
+
+
+
+}
+
+
+
+
+
+
+filtrer("toujours");
+
+
+
+</script>
+
+
+</body>
+
+</html>
