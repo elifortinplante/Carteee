@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>GPS</title>
+
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+
+margin:0;
+
+font-family:Arial;
+
+background:#ffffff;
+
+height:100vh;
+
+overflow:hidden;
+
+}
+
+
+/* ========================= */
+/* PARTIE CARTE */
+/* ========================= */
+
+#carte{
+
+height:50vh;
+
+width:100%;
+
+border-radius:0 0 25px 25px;
+
+overflow:hidden;
+
+}
+
+
+/* ========================= */
+/* PARTIE INFORMATIONS */
+/* ========================= */
+
+#bas{
+
+height:50vh;
+
+display:flex;
+
+flex-direction:column;
+
+align-items:center;
+
+justify-content:center;
+
+padding:20px;
+
+}
+
+
+/* ========================= */
+/* SPORT */
+/* ========================= */
+
+#sport{
+
+font-size:25px;
+
+font-weight:bold;
+
+margin-bottom:20px;
+
+}
+
+
+/* ========================= */
+/* DISTANCE */
+/* ========================= */
+
+#distance{
+
+font-size:55px;
+
+font-weight:bold;
+
+margin:5px;
+
+}
+
+
+/* ========================= */
+/* TEMPS */
+/* ========================= */
+
+#temps{
+
+font-size:35px;
+
+margin:5px 0 25px 0;
+
+}
+
+
+/* ========================= */
+/* BOUTONS */
+/* ========================= */
+
+button{
+
+padding:15px 25px;
+
+margin:5px;
+
+font-size:18px;
+
+border:none;
+
+border-radius:15px;
+
+cursor:pointer;
+
+}
+
+
+#demarrer{
+
+background:#4CAF50;
+
+color:white;
+
+}
+
+
+#pause{
+
+background:#ff9800;
+
+color:white;
+
+}
+
+
+#terminer{
+
+background:#f44336;
+
+color:white;
+
+}
+
+
+#retour{
+
+background:#eeeeee;
+
+}
+
+
+/* ========================= */
+/* POSITION GPS */
+/* ========================= */
+
+#precision{
+
+font-size:14px;
+
+color:#666;
+
+margin-top:15px;
+
+}
+
+
+/* ========================= */
+/* MESSAGE */
+/* ========================= */
+
+#message{
+
+position:fixed;
+
+top:10px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+background:white;
+
+padding:10px 18px;
+
+border-radius:15px;
+
+box-shadow:0 2px 10px rgba(0,0,0,0.2);
+
+z-index:1000;
+
+display:none;
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- ========================= -->
+<!-- MESSAGE -->
+<!-- ========================= -->
+
+<div id="message"></div>
+
+
+<!-- ========================= -->
+<!-- CARTE -->
+<!-- ========================= -->
+
+<div id="carte"></div>
+
+
+<!-- ========================= -->
+<!-- INFORMATIONS -->
+<!-- ========================= -->
+
+<div id="bas">
+
+
+<div id="sport">
+🛰️ GPS
+</div>
+
+
+<div id="distance">
+0.00 km
+</div>
+
+
+<div id="temps">
+00:00:00
+</div>
+
+
+<div>
+
+<button
+id="demarrer"
+onclick="demarrerGPS()"
+>
+
+▶️ Démarrer
+
+</button>
+
+
+<button
+id="pause"
+onclick="pauseGPS()"
+disabled
+>
+
+⏸️ Pause
+
+</button>
+
+
+<button
+id="terminer"
+onclick="terminerGPS()"
+disabled
+>
+
+⏹️ Terminer
+
+</button>
+
+</div>
+
+
+<button
+id="retour"
+onclick="retourCarte()"
+>
+
+🗺️ Retour à la carte
+
+</button>
+
+
+<div id="precision">
+
+GPS non démarré
+
+</div>
+
+
+</div>
+
+
+<script
+src="https://unpkg.com/leaflet/dist/leaflet.js"
+></script>
+
+
+<script>
+
+
+/* ========================= */
+/* RÉCUPÉRER LE SPORT */
+/* ========================= */
+
+
+const parametres =
+
+new URLSearchParams(
+window.location.search
+);
+
+
+let sport =
+
+parametres.get("sport")
+|| "Vélo";
+
+
+/* ========================= */
+/* AFFICHAGE SPORT */
+/* ========================= */
+
+
+let emoji = "🚲";
+
+
+if(sport == "Marche"){
+
+emoji = "🚶";
+
+}
+
+
+if(sport == "Course"){
+
+emoji = "🏃";
+
+}
+
+
+document.getElementById("sport").textContent =
+
+emoji + " " + sport;
+
+
+
+/* ========================= */
+/* COULEUR DU TRAJET */
+/* ========================= */
+
+
+function couleurSport(){
+
+if(sport == "Vélo")
+
+return "yellow";
+
+
+if(sport == "Course")
+
+return "orange";
+
+
+if(sport == "Marche")
+
+return "blue";
+
+
+return "red";
+
+}
+
+
+
+/* ========================= */
+/* CARTE */
+/* ========================= */
+
+
+let map = L.map("carte");
+
+
+L.tileLayer(
+
+"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+{
+
+maxZoom:19,
+
+attribution:"© OpenStreetMap"
+
+}
+
+).addTo(map);
+
+
+
+/* ========================= */
+/* VARIABLES GPS */
+/* ========================= */
+
+
+let watchID = null;
+
+
+let enCours = false;
+
+
+let enPause = false;
+
+
+let points = [];
+
+
+let distance = 0;
+
+
+let positionActuelle = null;
+
+
+let marqueur = null;
+
+
+let ligne = null;
+
+
+/* ========================= */
+/* CHRONOMÈTRE */
+/* ========================= */
+
+
+let tempsTotal = 0;
+
+
+let debutTemps = 0;
+
+
+let intervalleTemps = null;
+
+
+
+/* ========================= */
+/* AFFICHER MESSAGE */
+/* ========================= */
+
+
+function message(texte){
+
+let element =
+
+document.getElementById(
+"message"
+);
+
+
+element.textContent = texte;
+
+
+element.style.display = "block";
+
+
+setTimeout(()=>{
+
+element.style.display = "none";
+
+},3000);
+
+}
+
+
+
+/* ========================= */
+/* FORMAT TEMPS */
+/* ========================= */
+
+
+function afficherTemps(secondes){
+
+secondes = Math.floor(secondes);
+
+
+let heures =
+
+Math.floor(
+secondes / 3600
+);
+
+
+let minutes =
+
+Math.floor(
+(secondes % 3600) / 60
+);
+
+
+let sec =
+
+secondes % 60;
+
+
+return (
+
+String(heures).padStart(2,"0")
++
+":"
++
+String(minutes).padStart(2,"0")
++
+":"
++
+String(sec).padStart(2,"0")
+
+);
+
+}
+
+
+
+/* ========================= */
+/* METTRE À JOUR LE TEMPS */
+/* ========================= */
+
+
+function actualiserTemps(){
+
+if(!enCours || enPause)
+
+return;
+
+
+let maintenant =
+Date.now();
+
+
+let secondes =
+
+tempsTotal
++
+(
+maintenant - debutTemps
+) / 1000;
+
+
+document.getElementById(
+"temps"
+).textContent =
+
+afficherTemps(secondes);
+
+}
+
+
+
+/* ========================= */
+/* DISTANCE ENTRE DEUX POINTS */
+/* ========================= */
+
+
+function distanceEntrePoints(
+lat1,
+lon1,
+lat2,
+lon2
+){
+
+let R = 6371000;
+
+
+let dLat =
+
+(
+lat2-lat1
+)
+*
+Math.PI/180;
+
+
+let dLon =
+
+(
+lon2-lon1
+)
+*
+Math.PI/180;
+
+
+let a =
+
+Math.sin(dLat/2)
+*
+Math.sin(dLat/2)
++
+
+Math.cos(
+lat1*Math.PI/180
+)
+*
+Math.cos(
+lat2*Math.PI/180
+)
+*
+Math.sin(dLon/2)
+*
+Math.sin(dLon/2);
+
+
+let c =
+
+2 *
+Math.atan2(
+Math.sqrt(a),
+Math.sqrt(1-a)
+);
+
+
+return R*c;
+
+}
+
+
+
+/* ========================= */
+/* POSITION GPS */
+/* ========================= */
+
+
+function nouvellePosition(position){
+
+
+if(!enCours || enPause)
+
+return;
+
+
+
+let lat =
+
+position.coords.latitude;
+
+
+let lon =
+
+position.coords.longitude;
+
+
+let precision =
+
+position.coords.accuracy;
+
+
+
+/* précision */
+
+document.getElementById(
+"precision"
+).textContent =
+
+"Précision GPS : "
++
+Math.round(precision)
++
+" m";
+
+
+
+let nouveauPoint = [
+lat,
+lon
+];
+
+
+
+/* ========================= */
+/* PREMIER POINT */
+/* ========================= */
+
+
+if(points.length == 0){
+
+points.push(
+nouveauPoint
+);
+
+
+positionActuelle =
+nouveauPoint;
+
+
+
+ligne =
+
+L.polyline(
+
+points,
+
+{
+
+color:couleurSport(),
+
+weight:5
+
+}
+
+).addTo(map);
+
+
+
+marqueur =
+
+L.circleMarker(
+
+nouveauPoint,
+
+{
+
+radius:8,
+
+color:"black",
+
+fillColor:couleurSport(),
+
+fillOpacity:1
+
+}
+
+).addTo(map);
+
+
+
+marqueur.bindPopup(
+"📍 Position actuelle"
+);
+
+
+
+map.setView(
+nouveauPoint,
+17
+);
+
+
+
+return;
+
+}
+
+
+
+/* ========================= */
+/* DISTANCE */
+/* ========================= */
+
+
+let dernierPoint =
+
+points[
+points.length-1
+];
+
+
+let nouvelleDistance =
+
+distanceEntrePoints(
+
+dernierPoint[0],
+dernierPoint[1],
+
+lat,
+lon
+
+);
+
+
+/*
+On ignore les déplacements
+GPS trop petits.
+*/
+
+if(nouvelleDistance < 3){
+
+return;
+
+}
+
+
+/*
+On ignore aussi une
+position GPS extrêmement
+imprécise.
+*/
+
+if(precision > 100){
+
+return;
+
+}
+
+
+
+/* ========================= */
+/* AJOUT DU POINT */
+/* ========================= */
+
+
+distance +=
+
+nouvelleDistance;
+
+
+points.push(
+nouveauPoint
+);
+
+
+positionActuelle =
+nouveauPoint;
+
+
+
+/* ========================= */
+/* MISE À JOUR DISTANCE */
+/* ========================= */
+
+
+document.getElementById(
+"distance"
+).textContent =
+
+(distance/1000).toFixed(2)
++
+" km";
+
+
+
+/* ========================= */
+/* MISE À JOUR LIGNE */
+/* ========================= */
+
+
+ligne.setLatLngs(
+points
+);
+
+
+
+/* ========================= */
+/* MISE À JOUR MARQUEUR */
+/* ========================= */
+
+
+marqueur.setLatLng(
+nouveauPoint
+);
+
+
+
+/* ========================= */
+/* SUIVRE LA POSITION */
+/* ========================= */
+
+
+map.setView(
+nouveauPoint,
+map.getZoom(),
+{
+
+animate:true
+
+}
+
+);
+
+}
+
+
+
+/* ========================= */
+/* ERREUR GPS */
+/* ========================= */
+
+
+function erreurGPS(erreur){
+
+console.log(erreur);
+
+
+if(erreur.code == 1){
+
+message(
+"❌ Autorisation GPS refusée."
+);
+
+}
+
+
+else if(erreur.code == 2){
+
+message(
+"❌ Position GPS impossible."
+);
+
+}
+
+
+else if(erreur.code == 3){
+
+message(
+"❌ Le GPS a mis trop de temps."
+);
+
+}
+
+}
+
+
+
+/* ========================= */
+/* DÉMARRER GPS */
+/* ========================= */
+
+
+function demarrerGPS(){
+
+
+if(!navigator.geolocation){
+
+message(
+"❌ Ce navigateur ne supporte pas le GPS."
+);
+
+return;
+
+}
+
+
+
+/* ========================= */
+/* PREMIÈRE LECTURE */
+/* ========================= */
+
+
+navigator.geolocation.getCurrentPosition(
+
+function(position){
+
+nouvellePosition(
+position
+);
+
+},
+
+erreurGPS,
+
+{
+
+enableHighAccuracy:true,
+
+maximumAge:0,
+
+timeout:15000
+
+}
+
+);
+
+
+
+/* ========================= */
+/* SUIVI CONTINU */
+/* ========================= */
+
+
+watchID =
+
+navigator.geolocation.watchPosition(
+
+nouvellePosition,
+
+erreurGPS,
+
+{
+
+enableHighAccuracy:true,
+
+maximumAge:1000,
+
+timeout:10000
+
+}
+
+);
+
+
+
+/* ========================= */
+/* ÉTAT */
+/* ========================= */
+
+
+enCours = true;
+
+enPause = false;
+
+
+/* ========================= */
+/* CHRONO */
+/* ========================= */
+
+
+debutTemps = Date.now();
+
+
+intervalleTemps =
+
+setInterval(
+actualiserTemps,
+250
+);
+
+
+
+/* ========================= */
+/* BOUTONS */
+/* ========================= */
+
+
+document.getElementById(
+"demarrer"
+).disabled = true;
+
+
+document.getElementById(
+"pause"
+).disabled = false;
+
+
+document.getElementById(
+"terminer"
+).disabled = false;
+
+
+
+message(
+"🛰️ GPS démarré"
+);
+
+}
+
+
+
+/* ========================= */
+/* PAUSE */
+/* ========================= */
+
+
+function pauseGPS(){
+
+
+if(!enCours)
+
+return;
+
+
+if(!enPause){
+
+
+/* enregistrer le temps */
+
+tempsTotal +=
+
+(
+Date.now()
+-
+debutTemps
+) / 1000;
+
+
+enPause = true;
+
+
+/* arrêter le suivi */
+
+if(watchID !== null){
+
+navigator.geolocation.clearWatch(
+watchID
+);
+
+watchID = null;
+
+}
+
+
+document.getElementById(
+"pause"
+).textContent =
+"▶️ Reprendre";
+
+
+message(
+"⏸️ GPS en pause"
+);
+
+
+}
+
+else{
+
+
+enPause = false;
+
+
+debutTemps =
+Date.now();
+
+
+watchID =
+
+navigator.geolocation.watchPosition(
+
+nouvellePosition,
+
+erreurGPS,
+
+{
+
+enableHighAccuracy:true,
+
+maximumAge:1000,
+
+timeout:10000
+
+}
+
+);
+
+
+document.getElementById(
+"pause"
+).textContent =
+"⏸️ Pause";
+
+
+message(
+"▶️ GPS repris"
+);
+
+}
+
+}
+
+
+
+/* ========================= */
+/* OBTENIR TEMPS FINAL */
+/* ========================= */
+
+
+function obtenirTempsFinal(){
+
+if(enPause){
+
+return Math.floor(
+tempsTotal
+);
+
+}
+
+
+return Math.floor(
+
+tempsTotal
++
+(
+Date.now()
+-
+debutTemps
+) / 1000
+
+);
+
+}
+
+
+
+/* ========================= */
+/* TERMINER */
+/* ========================= */
+
+
+function terminerGPS(){
+
+
+if(!enCours)
+
+return;
+
+
+
+if(
+
+!confirm(
+"Terminer ce trajet ?"
+)
+
+){
+
+return;
+
+}
+
+
+
+/* ========================= */
+/* ARRÊTER GPS */
+/* ========================= */
+
+
+if(watchID !== null){
+
+navigator.geolocation.clearWatch(
+watchID
+);
+
+watchID = null;
+
+}
+
+
+clearInterval(
+intervalleTemps
+);
+
+
+
+/* ========================= */
+/* TEMPS */
+/* ========================= */
+
+
+let tempsFinal =
+
+obtenirTempsFinal();
+
+
+
+/* ========================= */
+/* DATE */
+/* ========================= */
+
+
+let maintenant =
+
+new Date();
+
+
+let date =
+
+maintenant.toLocaleDateString(
+"sv-SE"
+);
+
+
+
+/* ========================= */
+/* ACTIVITÉ */
+/* ========================= */
+
+
+let activite = {
+
+sport:sport,
+
+date:date,
+
+distance:Number(
+(distance/1000).toFixed(2)
+),
+
+temps:tempsFinal,
+
+points:points
+
+};
+
+
+
+/* ========================= */
+/* CHARGER ACTIVITÉS */
+/* ========================= */
+
+
+let activites =
+
+JSON.parse(
+
+localStorage.getItem(
+"activitesTCX"
+)
+
+) || [];
+
+
+
+/* ========================= */
+/* AJOUTER ACTIVITÉ */
+/* ========================= */
+
+
+activites.push(
+activite
+);
+
+
+
+/* ========================= */
+/* SAUVEGARDER */
+/* ========================= */
+
+
+localStorage.setItem(
+
+"activitesTCX",
+
+JSON.stringify(
+activites
+)
+
+);
+
+
+
+enCours = false;
+
+enPause = false;
+
+
+
+message(
+"✅ Trajet enregistré !"
+);
+
+
+
+/*
+Attendre un peu avant
+de retourner à la carte.
+*/
+
+setTimeout(()=>{
+
+location.href =
+"index.html";
+
+},1000);
+
+}
+
+
+
+/* ========================= */
+/* RETOUR */
+/* ========================= */
+
+
+function retourCarte(){
+
+
+if(enCours){
+
+if(
+
+!confirm(
+"Un trajet est en cours. Quitter sans enregistrer ?"
+)
+
+){
+
+return;
+
+}
+
+}
+
+
+if(watchID !== null){
+
+navigator.geolocation.clearWatch(
+watchID
+);
+
+}
+
+
+location.href =
+"index.html";
+
+}
+
+
+
+/* ========================= */
+/* POSITION INITIALE */
+/* ========================= */
+
+
+if(navigator.geolocation){
+
+navigator.geolocation.getCurrentPosition(
+
+function(position){
+
+let lat =
+position.coords.latitude;
+
+let lon =
+position.coords.longitude;
+
+
+map.setView(
+[lat,lon],
+16
+);
+
+},
+
+function(){
+
+map.setView(
+[20,0],
+2
+);
+
+},
+
+{
+
+enableHighAccuracy:true,
+
+maximumAge:60000,
+
+timeout:10000
+
+}
+
+);
+
+}
+
+else{
+
+map.setView(
+[20,0],
+2
+);
+
+}
+
+
+</script>
+
+</body>
+
+</html>
