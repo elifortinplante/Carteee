@@ -8,8 +8,10 @@
 
 <title>Carte TCX</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-
+<link
+rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"
+>
 
 <style>
 
@@ -18,23 +20,22 @@ margin:0;
 font-family:Arial;
 }
 
-
 button{
 padding:12px;
 margin:5px;
 font-size:16px;
+border-radius:8px;
+border:1px solid #ccc;
+background:white;
 }
-
 
 #map{
 height:85vh;
 }
 
-
 input{
 display:none;
 }
-
 
 
 /* Fenêtre des trajets sélectionnés */
@@ -64,7 +65,6 @@ box-sizing:border-box;
 }
 
 
-
 #fermerSelection{
 
 position:absolute;
@@ -76,7 +76,6 @@ top:15px;
 font-size:25px;
 
 }
-
 
 
 .trajet{
@@ -94,13 +93,11 @@ font-size:18px;
 }
 
 
-
 .trajet button{
 
 width:100%;
 
 }
-
 
 
 #tri{
@@ -110,6 +107,89 @@ text-align:center;
 }
 
 
+/* ========================= */
+/* FENÊTRE CHOIX DU SPORT */
+/* ========================= */
+
+#gpsSportBox{
+
+display:none;
+
+position:fixed;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+background:rgba(0,0,0,0.5);
+
+z-index:2000;
+
+align-items:center;
+
+justify-content:center;
+
+}
+
+
+#gpsSport{
+
+background:white;
+
+width:85%;
+
+max-width:400px;
+
+border-radius:20px;
+
+padding:25px;
+
+box-sizing:border-box;
+
+text-align:center;
+
+box-shadow:0 5px 20px rgba(0,0,0,0.3);
+
+}
+
+
+#gpsSport h2{
+
+margin-top:0;
+
+}
+
+
+.sportButton{
+
+display:block;
+
+width:100%;
+
+margin:12px 0;
+
+padding:18px;
+
+font-size:20px;
+
+border-radius:15px;
+
+border:1px solid #ccc;
+
+background:#f5f5f5;
+
+}
+
+
+#annulerGPS{
+
+margin-top:10px;
+
+width:100%;
+
+}
 
 </style>
 
@@ -119,11 +199,19 @@ text-align:center;
 <body>
 
 
+<!-- ========================= -->
+<!-- BOUTONS PRINCIPAUX -->
+<!-- ========================= -->
+
 
 <button onclick="ouvrirTCX()">
 📂 Importer TCX
 </button>
 
+
+<button onclick="ouvrirGPS()">
+🛰️ GPS
+</button>
 
 
 <button onclick="location.href='stats.html'">
@@ -131,11 +219,9 @@ text-align:center;
 </button>
 
 
-
 <button onclick="effacer()">
 🗑️ Effacer
 </button>
-
 
 
 <button onclick="modeSelection()">
@@ -143,27 +229,88 @@ text-align:center;
 </button>
 
 
-
-
-<input id="fichier" type="file" accept=".tcx" multiple>
-
-
-
+<input
+id="fichier"
+type="file"
+accept=".tcx"
+multiple
+>
 
 
 <div id="map"></div>
 
 
 
+<!-- ========================= -->
+<!-- FENÊTRE CHOIX DU SPORT -->
+<!-- ========================= -->
+
+
+<div id="gpsSportBox">
+
+<div id="gpsSport">
+
+<h2>
+🛰️ GPS
+</h2>
+
+<p>
+Choisis le sport :
+</p>
+
+
+<button
+class="sportButton"
+onclick="choisirSport('Vélo')"
+>
+🚲 Vélo
+</button>
+
+
+<button
+class="sportButton"
+onclick="choisirSport('Marche')"
+>
+🚶 Marche
+</button>
+
+
+<button
+class="sportButton"
+onclick="choisirSport('Course')"
+>
+🏃 Course
+</button>
+
+
+<button
+id="annulerGPS"
+onclick="fermerGPS()"
+>
+Annuler
+</button>
+
+
+</div>
+
+</div>
+
+
+
+<!-- ========================= -->
+<!-- FENÊTRE SÉLECTION -->
+<!-- ========================= -->
 
 
 <div id="selectionBox">
 
 
-<button id="fermerSelection" onclick="fermerSelection()">
+<button
+id="fermerSelection"
+onclick="fermerSelection()"
+>
 ✕
 </button>
-
 
 
 <h2>
@@ -172,12 +319,9 @@ Trajets sélectionnés
 
 
 
-
 <div id="tri">
 
-
 Trier par :
-
 
 <br>
 
@@ -212,28 +356,30 @@ Temps -
 </button>
 
 
-
 </div>
-
-
 
 
 <div id="listeSelection"></div>
 
 
-
 </div>
 
 
 
+<script
+src="https://unpkg.com/leaflet/dist/leaflet.js"
+></script>
 
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
 
 
-let map=L.map("map").setView([20,0],2);
+/* ========================= */
+/* CARTE */
+/* ========================= */
 
+
+let map = L.map("map").setView([20,0],2);
 
 
 L.tileLayer(
@@ -252,32 +398,33 @@ attribution:"© OpenStreetMap"
 
 
 
+/* ========================= */
+/* ACTIVITÉS */
+/* ========================= */
 
 
 let activites =
 
-JSON.parse(localStorage.getItem("activitesTCX")) || [];
+JSON.parse(
+localStorage.getItem("activitesTCX")
+) || [];
 
 
 
+let lignes = [];
 
-
-let lignes=[];
-
-
-let trajetsSelectionnes=[];
+let trajetsSelectionnes = [];
 
 
 
-
-
+/* ========================= */
+/* TYPE DE SPORT */
+/* ========================= */
 
 
 function typeSport(sport){
 
-
-sport=String(sport).toLowerCase();
-
+sport = String(sport).toLowerCase();
 
 
 if(
@@ -295,7 +442,6 @@ return "Vélo";
 }
 
 
-
 if(
 
 sport.includes("run")
@@ -305,7 +451,6 @@ sport.includes("run")
 return "Course";
 
 }
-
 
 
 if(
@@ -321,95 +466,80 @@ return "Marche";
 }
 
 
-
 return "Autre";
-
 
 }
 
 
 
-
-
-
+/* ========================= */
+/* COULEUR */
+/* ========================= */
 
 
 function couleur(sport){
 
-
-if(sport=="Vélo")
+if(sport == "Vélo")
 
 return "yellow";
 
 
-
-if(sport=="Course")
+if(sport == "Course")
 
 return "orange";
 
 
-
-if(sport=="Marche")
+if(sport == "Marche")
 
 return "blue";
 
 
-
 return "red";
-
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* TEMPS */
+/* ========================= */
 
 
 function tempsTexte(sec){
-
 
 if(!sec)
 
 return "Inconnu";
 
 
-
-let h=Math.floor(sec/3600);
-
-
-let m=Math.floor((sec%3600)/60);
+let h = Math.floor(sec / 3600);
 
 
+let m = Math.floor(
+(sec % 3600) / 60
+);
 
-return h+" h "+m+" min";
 
+return h + " h " + m + " min";
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* AFFICHER LES ACTIVITÉS */
+/* ========================= */
 
 
 function afficher(){
 
-
-
-lignes=[];
-
+lignes = [];
 
 
 activites.forEach((a,index)=>{
 
 
-
-let ligne=L.polyline(
+let ligne = L.polyline(
 
 a.points,
 
@@ -425,11 +555,7 @@ weight:4
 
 
 
-
-
-ligne.activiteIndex=index;
-
-
+ligne.activiteIndex = index;
 
 
 
@@ -446,28 +572,21 @@ ligne.bindPopup(`
 `);
 
 
-
-
 lignes.push(ligne);
 
 
-
 });
-
-
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* IMPORTER TCX */
+/* ========================= */
 
 
 function ouvrirTCX(){
-
 
 document
 
@@ -475,38 +594,35 @@ document
 
 .click();
 
-
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* LECTURE TCX */
+/* ========================= */
 
 
 document
 
 .getElementById("fichier")
 
-.addEventListener("change",function(e){
-
+.addEventListener(
+"change",
+function(e){
 
 
 for(let fichier of e.target.files){
 
 
-
-let lecteur=new FileReader();
-
-
-
-lecteur.onload=function(){
+let lecteur = new FileReader();
 
 
 
-let xml=
+lecteur.onload = function(){
+
+
+let xml =
 
 new DOMParser()
 
@@ -520,23 +636,19 @@ lecteur.result,
 
 
 
+let sport = "Autre";
 
 
+let activity =
 
-let sport="Autre";
-
-
-
-let activity=
-
-xml.getElementsByTagName("Activity")[0];
-
+xml.getElementsByTagName(
+"Activity"
+)[0];
 
 
 if(activity){
 
-
-sport=
+sport =
 
 typeSport(
 
@@ -544,63 +656,60 @@ activity.getAttribute("Sport")
 
 );
 
-
 }
 
 
 
+/* DATE */
 
 
+let date = "Inconnue";
 
 
+let id =
 
-let date="Inconnue";
-
-
-
-let id=
-
-xml.getElementsByTagName("Id")[0];
-
+xml.getElementsByTagName(
+"Id"
+)[0];
 
 
 if(id){
 
+date =
 
-date=
-
-id.textContent.substring(0,10);
-
+id.textContent.substring(
+0,
+10
+);
 
 }
 
 
 
+/* DISTANCE */
 
 
+let distance = 0;
 
 
-let distance=0;
+let distances =
 
-
-
-let distances=
-
-xml.getElementsByTagName("DistanceMeters");
-
+xml.getElementsByTagName(
+"DistanceMeters"
+);
 
 
 if(distances.length){
 
-
-
-distance=
+distance =
 
 (
 
 parseFloat(
 
-distances[distances.length-1].textContent
+distances[
+distances.length - 1
+].textContent
 
 )
 
@@ -608,31 +717,26 @@ distances[distances.length-1].textContent
 
 ).toFixed(2);
 
-
-
 }
 
 
 
+/* TEMPS */
 
 
+let temps = 0;
 
 
+let tempsXML =
 
-let temps=0;
-
-
-
-let tempsXML=
-
-xml.getElementsByTagName("TotalTimeSeconds");
-
+xml.getElementsByTagName(
+"TotalTimeSeconds"
+);
 
 
 if(tempsXML.length){
 
-
-temps=
+temps =
 
 parseFloat(
 
@@ -640,81 +744,75 @@ tempsXML[0].textContent
 
 );
 
-
 }
 
 
 
+/* POINTS GPS */
 
 
+let points = [];
 
 
-let points=[];
+let positions =
 
-
-
-let positions=
-
-xml.getElementsByTagName("Position");
-
+xml.getElementsByTagName(
+"Position"
+);
 
 
 for(let p of positions){
 
 
+let lat =
 
-let lat=
+p.getElementsByTagName(
+"LatitudeDegrees"
+)[0];
 
-p.getElementsByTagName("LatitudeDegrees")[0];
 
+let lon =
 
-
-let lon=
-
-p.getElementsByTagName("LongitudeDegrees")[0];
-
+p.getElementsByTagName(
+"LongitudeDegrees"
+)[0];
 
 
 if(lat && lon){
 
-
-
 points.push([
 
-parseFloat(lat.textContent),
+parseFloat(
+lat.textContent
+),
 
-parseFloat(lon.textContent)
+parseFloat(
+lon.textContent
+)
 
 ]);
 
+}
 
 }
 
 
 
-}
+/* CALCUL DISTANCE SI ABSENTE */
 
 
+if(distance == 0){
+
+let total = 0;
 
 
+for(
+let i = 1;
+i < points.length;
+i++
+){
 
-
-
-
-
-if(distance==0){
-
-
-
-let total=0;
-
-
-
-for(let i=1;i<points.length;i++){
-
-
-
-total+=map.distance(
+total += map.distance(
 
 points[i-1],
 
@@ -722,50 +820,33 @@ points[i]
 
 );
 
+}
 
+
+distance =
+
+(total / 1000).toFixed(2);
 
 }
 
 
 
-distance=
-
-(total/1000).toFixed(2);
+/* ACTIVITÉ */
 
 
-
-}
-
-
-
-
-
-
-
-
-
-let activite={
-
+let activite = {
 
 sport:sport,
 
-
 date:date,
-
 
 distance:Number(distance),
 
-
 temps:Number(temps),
-
 
 points:points
 
-
 };
-
-
-
 
 
 
@@ -773,24 +854,24 @@ activites.push(activite);
 
 
 
-
-
 localStorage.setItem(
 
 "activitesTCX",
 
-JSON.stringify(activites)
+JSON.stringify(
+activites
+)
 
 );
 
 
 
+/* LIGNE SUR LA CARTE */
 
 
+let ligne =
 
-
-
-let ligne=L.polyline(
+L.polyline(
 
 points,
 
@@ -806,85 +887,127 @@ weight:4
 
 
 
+ligne.activiteIndex =
 
-
-
-ligne.activiteIndex=
-
-activites.length-1;
-
-
-
-
+activites.length - 1;
 
 
 lignes.push(ligne);
 
 
 
-
-
-
 ligne.bindPopup(`
-
 
 <b>${sport}</b><br>
 
-
 📅 ${date}<br>
-
 
 📏 ${distance} km<br>
 
-
 ⏱ ${tempsTexte(temps)}
-
 
 `);
 
 
 
-
-
+if(points.length){
 
 map.fitBounds(points);
 
-
-
-
+}
 
 
 };
 
 
-
 lecteur.readAsText(fichier);
-
 
 
 }
 
 
+}
 
-});
+);
+
+
+
+/* ========================= */
+/* OUVRIR GPS */
+/* ========================= */
+
+
+function ouvrirGPS(){
+
+document
+
+.getElementById("gpsSportBox")
+
+.style.display = "flex";
+
+}
+
+
+
+/* ========================= */
+/* FERMER GPS */
+/* ========================= */
+
+
+function fermerGPS(){
+
+document
+
+.getElementById("gpsSportBox")
+
+.style.display = "none";
+
+}
+
+
+
+/* ========================= */
+/* CHOIX DU SPORT */
+/* ========================= */
+
+
+function choisirSport(sport){
+
+/* Fermer la fenêtre */
+
+fermerGPS();
+
+
+/* Ouvrir la page GPS */
+
+location.href =
+"gps.html?sport=" +
+encodeURIComponent(sport);
+
+}
+
+
+
+/* ========================= */
+/* MODE SÉLECTION */
+/* ========================= */
+
+
 function modeSelection(){
 
 
-
-let vueActuelle = map.getBounds();
-
-
-
-trajetsSelectionnes=[];
+let vueActuelle =
+map.getBounds();
 
 
+trajetsSelectionnes = [];
 
-activites.forEach((a,index)=>{
 
+activites.forEach(
+(a,index)=>{
 
 
 for(let point of a.points){
-
 
 
 if(
@@ -900,74 +1023,60 @@ point[1]
 ){
 
 
-
-trajetsSelectionnes.push(index);
-
+trajetsSelectionnes.push(
+index
+);
 
 break;
 
+}
 
 }
 
-
-
 }
 
-
-
-});
-
-
-
+);
 
 
 afficherSelection();
 
-
-
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* AFFICHER SÉLECTION */
+/* ========================= */
 
 
 function afficherSelection(){
 
 
+let liste =
 
-let liste=
-
-document.getElementById("listeSelection");
-
-
-
-liste.innerHTML="";
+document.getElementById(
+"listeSelection"
+);
 
 
+liste.innerHTML = "";
 
 
-
-trajetsSelectionnes.forEach(index=>{
-
-
-
-let a=activites[index];
+trajetsSelectionnes.forEach(
+index=>{
 
 
-
-let div=document.createElement("div");
-
+let a = activites[index];
 
 
-div.className="trajet";
+let div =
+document.createElement("div");
 
 
+div.className = "trajet";
 
-div.innerHTML=`
+
+div.innerHTML = `
 
 📅 ${a.date}
 
@@ -981,8 +1090,9 @@ div.innerHTML=`
 
 <br><br>
 
-
-<button onclick="voirTrajet(${index})">
+<button
+onclick="voirTrajet(${index})"
+>
 
 📍 Voir ce trajet
 
@@ -991,113 +1101,94 @@ div.innerHTML=`
 `;
 
 
-
 liste.appendChild(div);
-
 
 
 });
 
 
-
-
-
 document
 
-.getElementById("selectionBox")
+.getElementById(
+"selectionBox"
+)
 
-.style.display="block";
-
-
+.style.display = "block";
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* TRI */
+/* ========================= */
 
 
 function trier(type){
 
 
-
-trajetsSelectionnes.sort((a,b)=>{
-
-
-
-let x=activites[a];
-
-let y=activites[b];
+trajetsSelectionnes.sort(
+(a,b)=>{
 
 
+let x = activites[a];
 
-if(type=="dateRecent")
-
-return new Date(y.date)-new Date(x.date);
-
+let y = activites[b];
 
 
-if(type=="dateAncienne")
+if(type == "dateRecent")
 
-return new Date(x.date)-new Date(y.date);
-
-
-
-if(type=="distancePlus")
-
-return y.distance-x.distance;
+return new Date(y.date) -
+new Date(x.date);
 
 
+if(type == "dateAncienne")
 
-if(type=="distanceMoins")
-
-return x.distance-y.distance;
-
-
-
-if(type=="tempsPlus")
-
-return y.temps-x.temps;
+return new Date(x.date) -
+new Date(y.date);
 
 
+if(type == "distancePlus")
 
-if(type=="tempsMoins")
+return y.distance - x.distance;
 
-return x.temps-y.temps;
 
+if(type == "distanceMoins")
+
+return x.distance - y.distance;
+
+
+if(type == "tempsPlus")
+
+return y.temps - x.temps;
+
+
+if(type == "tempsMoins")
+
+return x.temps - y.temps;
 
 
 });
 
 
-
 afficherSelection();
-
-
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* VOIR TRAJET */
+/* ========================= */
 
 
 function voirTrajet(index){
 
 
-
 fermerSelection();
 
 
-
-let ligne=lignes[index];
-
+let ligne = lignes[index];
 
 
 map.fitBounds(
@@ -1105,7 +1196,6 @@ map.fitBounds(
 ligne.getBounds()
 
 );
-
 
 
 ligne.setStyle({
@@ -1117,17 +1207,13 @@ weight:8
 });
 
 
-
 setTimeout(()=>{
-
 
 
 ligne.setStyle({
 
 color:couleur(
-
 activites[index].sport
-
 ),
 
 weight:4
@@ -1135,82 +1221,74 @@ weight:4
 });
 
 
-
 },4000);
-
-
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* FERMER SÉLECTION */
+/* ========================= */
 
 
 function fermerSelection(){
 
 
-
 document
 
-.getElementById("selectionBox")
+.getElementById(
+"selectionBox"
+)
 
-.style.display="none";
-
-
+.style.display = "none";
 
 }
 
 
 
-
-
-
-
+/* ========================= */
+/* EFFACER */
+/* ========================= */
 
 
 function effacer(){
 
 
+if(
 
-if(confirm("Effacer toutes les activités ?")){
+confirm(
+"Effacer toutes les activités ?"
+)
+
+){
 
 
 localStorage.removeItem(
-
 "activitesTCX"
-
 );
-
 
 
 location.reload();
 
 
+}
 
 }
 
 
-}
 
-
-
-
-
-
+/* ========================= */
+/* AFFICHAGE INITIAL */
+/* ========================= */
 
 
 afficher();
-
 
 
 </script>
 
 
 </body>
-
 
 </html>
