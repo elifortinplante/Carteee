@@ -1,193 +1,712 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Carte TCX</title>
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+>
+
+<title>Map Vélo</title>
 
 <link
-rel="stylesheet"
-href="https://unpkg.com/leaflet/dist/leaflet.css"
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
 >
+
 
 <style>
 
-body{
-margin:0;
-font-family:Arial;
+/* ================================================= */
+/* BASE */
+/* ================================================= */
+
+*{
+    box-sizing:border-box;
 }
 
-button{
-padding:12px;
-margin:5px;
-font-size:16px;
-border-radius:8px;
-border:1px solid #ccc;
-background:white;
+html,
+body{
+
+    margin:0;
+
+    padding:0;
+
+    width:100%;
+
+    height:100%;
+
+    font-family:Arial,sans-serif;
+
+    background:#f5f5f5;
+
+    overflow:hidden;
+
+    touch-action:pan-y;
 }
+
+
+/* ================================================= */
+/* CONTENEUR PRINCIPAL */
+/* ================================================= */
+
+#application{
+
+    width:100%;
+
+    height:100vh;
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+
+/* ================================================= */
+/* EN-TÊTE */
+/* ================================================= */
+
+#entete{
+
+    height:62px;
+
+    min-height:62px;
+
+    background:white;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    position:relative;
+
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+
+    z-index:500;
+
+}
+
+
+/* ================================================= */
+/* TITRE */
+/* ================================================= */
+
+#titreSport{
+
+    font-size:25px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    user-select:none;
+
+}
+
+
+/* ================================================= */
+/* BOUTON MENU SPORT */
+/* ================================================= */
+
+#boutonSports{
+
+    position:absolute;
+
+    left:15px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    border-radius:13px;
+
+    background:#eeeeee;
+
+    font-size:23px;
+
+    cursor:pointer;
+
+}
+
+
+/* ================================================= */
+/* MENU DES SPORTS */
+/* ================================================= */
+
+#menuSports{
+
+    display:none;
+
+    position:absolute;
+
+    left:12px;
+
+    top:57px;
+
+    width:190px;
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:8px;
+
+    box-shadow:0 5px 20px rgba(0,0,0,0.2);
+
+    z-index:2000;
+
+}
+
+
+/* ================================================= */
+/* CHOIX SPORT */
+/* ================================================= */
+
+.choixSport{
+
+    padding:13px;
+
+    margin:3px 0;
+
+    border-radius:12px;
+
+    font-size:17px;
+
+    cursor:pointer;
+
+}
+
+
+.choixSport:hover{
+
+    background:#f0f0f0;
+
+}
+
+
+/* SPORT ACTUEL */
+
+.choixSport.actuel{
+
+    border:2px solid #222;
+
+    background:#f5f5f5;
+
+}
+
+
+/* ================================================= */
+/* CARTE */
+/* ================================================= */
 
 #map{
-height:85vh;
+
+    width:94%;
+
+    height:48vh;
+
+    min-height:250px;
+
+    margin:10px auto 0 auto;
+
+    border-radius:24px;
+
+    overflow:hidden;
+
+    box-shadow:0 2px 12px rgba(0,0,0,0.18);
+
+    flex-shrink:0;
+
 }
 
-input{
-display:none;
+
+/* ================================================= */
+/* PARTIE BASSE */
+/* ================================================= */
+
+#bas{
+
+    flex:1;
+
+    overflow-y:auto;
+
+    padding:10px 15px 85px 15px;
+
+    text-align:center;
+
 }
 
 
-/* Fenêtre des trajets sélectionnés */
+/* ================================================= */
+/* DERNIER TRAJET */
+/* ================================================= */
 
-#selectionBox{
+#dernierTitre{
 
-display:none;
+    font-size:21px;
 
-position:fixed;
+    font-weight:bold;
 
-top:0;
-left:0;
+    margin:4px auto 5px auto;
 
-width:100%;
-height:100%;
+    cursor:pointer;
 
-background:white;
+    width:max-content;
 
-z-index:1000;
+    padding:7px 14px;
 
-overflow:auto;
+    border-radius:12px;
 
-padding:20px;
+}
 
-box-sizing:border-box;
+
+#dernierTitre:active{
+
+    background:#e8e8e8;
+
+}
+
+
+/* ================================================= */
+/* INFORMATIONS DERNIER TRAJET */
+/* ================================================= */
+
+#dernierInfos{
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:10px;
+
+    max-width:450px;
+
+    margin:0 auto 10px auto;
+
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+
+    font-size:16px;
+
+}
+
+
+/* ================================================= */
+/* BOUTONS D'ACTION */
+/* ================================================= */
+
+#actions{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:8px;
+
+    max-width:500px;
+
+    margin:0 auto;
+
+}
+
+
+.action{
+
+    width:58px;
+
+    height:48px;
+
+    border:none;
+
+    border-radius:15px;
+
+    background:white;
+
+    font-size:23px;
+
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+
+    cursor:pointer;
+
+}
+
+
+.action:active{
+
+    transform:scale(0.95);
+
+}
+
+
+/* ================================================= */
+/* PANNEAU SUPPRESSION */
+/* ================================================= */
+
+#panneauSuppression{
+
+    display:none;
+
+    position:fixed;
+
+    left:50%;
+
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:88%;
+
+    max-width:400px;
+
+    background:white;
+
+    border-radius:25px;
+
+    padding:22px;
+
+    box-shadow:0 8px 30px rgba(0,0,0,0.3);
+
+    z-index:5000;
+
+    text-align:center;
+
+}
+
+
+#panneauSuppression h2{
+
+    margin-top:0;
+
+}
+
+
+.boutonSuppression{
+
+    width:100%;
+
+    padding:14px;
+
+    margin:7px 0;
+
+    border:none;
+
+    border-radius:14px;
+
+    font-size:17px;
+
+    cursor:pointer;
+
+}
+
+
+#effacerUn{
+
+    background:#eeeeee;
+
+}
+
+
+#effacerTout{
+
+    background:#ffdddd;
+
+}
+
+
+#annulerSuppression{
+
+    background:#eeeeee;
+
+}
+
+
+/* ================================================= */
+/* PANNEAU SÉLECTION */
+/* ================================================= */
+
+#panneauSelection{
+
+    display:none;
+
+    position:fixed;
+
+    left:50%;
+
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    width:90%;
+
+    max-width:450px;
+
+    max-height:75vh;
+
+    overflow-y:auto;
+
+    background:white;
+
+    border-radius:25px;
+
+    padding:20px;
+
+    box-shadow:0 8px 30px rgba(0,0,0,0.3);
+
+    z-index:5000;
+
+}
+
+
+#panneauSelection h2{
+
+    text-align:center;
+
+    margin-top:0;
+
+}
+
+
+.trajetChoix{
+
+    background:#f1f1f1;
+
+    border-radius:15px;
+
+    padding:14px;
+
+    margin:8px 0;
+
+    cursor:pointer;
+
+}
+
+
+.trajetChoix:active{
+
+    background:#dddddd;
 
 }
 
 
 #fermerSelection{
 
-position:absolute;
+    width:100%;
 
-right:15px;
+    padding:12px;
 
-top:15px;
+    border:none;
 
-font-size:25px;
+    border-radius:13px;
 
-}
+    background:#eeeeee;
 
+    font-size:16px;
 
-.trajet{
-
-background:#f2f2f2;
-
-border-radius:15px;
-
-padding:15px;
-
-margin:10px;
-
-font-size:18px;
+    margin-top:10px;
 
 }
 
 
-.trajet button{
+/* ================================================= */
+/* CONFIRMATION */
+/* ================================================= */
 
-width:100%;
+#confirmation{
 
-}
+    display:none;
 
+    position:fixed;
 
-#tri{
+    left:50%;
 
-text-align:center;
+    top:50%;
 
-}
+    transform:translate(-50%,-50%);
 
+    width:85%;
 
-/* ========================= */
-/* FENÊTRE CHOIX DU SPORT */
-/* ========================= */
+    max-width:360px;
 
-#gpsSportBox{
+    background:white;
 
-display:none;
+    border-radius:23px;
 
-position:fixed;
+    padding:22px;
 
-top:0;
-left:0;
+    box-shadow:0 8px 30px rgba(0,0,0,0.3);
 
-width:100%;
-height:100%;
+    z-index:6000;
 
-background:rgba(0,0,0,0.5);
-
-z-index:2000;
-
-align-items:center;
-
-justify-content:center;
+    text-align:center;
 
 }
 
 
-#gpsSport{
+#confirmation h3{
 
-background:white;
-
-width:85%;
-
-max-width:400px;
-
-border-radius:20px;
-
-padding:25px;
-
-box-sizing:border-box;
-
-text-align:center;
-
-box-shadow:0 5px 20px rgba(0,0,0,0.3);
+    margin-top:0;
 
 }
 
 
-#gpsSport h2{
+.confirmationBoutons{
 
-margin-top:0;
+    display:flex;
 
-}
-
-
-.sportButton{
-
-display:block;
-
-width:100%;
-
-margin:12px 0;
-
-padding:18px;
-
-font-size:20px;
-
-border-radius:15px;
-
-border:1px solid #ccc;
-
-background:#f5f5f5;
+    gap:8px;
 
 }
 
 
-#annulerGPS{
+.confirmationBoutons button{
 
-margin-top:10px;
+    flex:1;
 
-width:100%;
+    padding:13px;
+
+    border:none;
+
+    border-radius:13px;
+
+    font-size:16px;
+
+}
+
+
+#boutonAnnuler{
+
+    background:#eeeeee;
+
+}
+
+
+#boutonConfirmer{
+
+    background:#ff4d4d;
+
+    color:white;
+
+}
+
+
+/* ================================================= */
+/* MESSAGE */
+/* ================================================= */
+
+#message{
+
+    display:none;
+
+    position:fixed;
+
+    left:50%;
+
+    top:15px;
+
+    transform:translateX(-50%);
+
+    background:#222;
+
+    color:white;
+
+    padding:12px 20px;
+
+    border-radius:15px;
+
+    z-index:7000;
+
+    font-size:15px;
+
+}
+
+
+/* ================================================= */
+/* BOUTON GPS ACTIF */
+/* ================================================= */
+
+.gpsActif{
+
+    animation:pulse 1.5s infinite;
+
+}
+
+
+@keyframes pulse{
+
+    0%{
+        transform:scale(1);
+    }
+
+    50%{
+        transform:scale(1.08);
+    }
+
+    100%{
+        transform:scale(1);
+    }
+
+}
+
+
+/* ================================================= */
+/* PETITS ÉCRANS */
+/* ================================================= */
+
+@media(max-height:650px){
+
+    #map{
+
+        height:43vh;
+
+    }
+
+    #dernierInfos{
+
+        padding:7px;
+
+    }
+
+    #bas{
+
+        padding-top:6px;
+
+    }
+
+}
+
+
+/* ================================================= */
+/* EMPÊCHER LE ZOOM DE LA PAGE */
+/* ================================================= */
+
+body{
+
+    -webkit-text-size-adjust:100%;
+
+}
+
+
+/* ================================================= */
+/* MASQUER LA BARRE DE DÉFILEMENT */
+/* ================================================= */
+
+#bas::-webkit-scrollbar{
+
+    display:none;
 
 }
 
@@ -199,1096 +718,1792 @@ width:100%;
 <body>
 
 
-<!-- ========================= -->
-<!-- BOUTONS PRINCIPAUX -->
-<!-- ========================= -->
+<div id="application">
 
 
-<button onclick="ouvrirTCX()">
-📂 Importer TCX
-</button>
+<!-- ================================================= -->
+<!-- EN-TÊTE -->
+<!-- ================================================= -->
+
+<div id="entete">
 
 
-<button onclick="ouvrirGPS()">
-🛰️ GPS
-</button>
-
-
-<button onclick="location.href='stats.html'">
-📊 Statistiques
-</button>
-
-
-<button onclick="effacer()">
-🗑️ Effacer
-</button>
-
-
-<button onclick="modeSelection()">
-📌 Sélectionner
-</button>
-
-
-<input
-id="fichier"
-type="file"
-accept=".tcx"
-multiple
+<button
+    id="boutonSports"
+    onclick="ouvrirSports()"
 >
+    ☰
+</button>
 
+
+<div id="titreSport">
+    🚲 Vélo
+</div>
+
+
+<!-- ================================================= -->
+<!-- MENU SPORTS -->
+<!-- ================================================= -->
+
+<div id="menuSports">
+
+
+<div
+    class="choixSport"
+    data-sport="Vélo"
+    onclick="choisirSport('Vélo')"
+>
+    🚲 Vélo
+</div>
+
+
+<div
+    class="choixSport"
+    data-sport="Marche"
+    onclick="choisirSport('Marche')"
+>
+    🚶 Marche
+</div>
+
+
+<div
+    class="choixSport"
+    data-sport="Course"
+    onclick="choisirSport('Course')"
+>
+    🏃 Course
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- CARTE -->
+<!-- ================================================= -->
 
 <div id="map"></div>
 
 
+<!-- ================================================= -->
+<!-- BAS -->
+<!-- ================================================= -->
 
-<!-- ========================= -->
-<!-- FENÊTRE CHOIX DU SPORT -->
-<!-- ========================= -->
-
-
-<div id="gpsSportBox">
-
-<div id="gpsSport">
-
-<h2>
-🛰️ GPS
-</h2>
-
-<p>
-Choisis le sport :
-</p>
+<div id="bas">
 
 
-<button
-class="sportButton"
-onclick="choisirSport('Vélo')"
+<div
+    id="dernierTitre"
+    onclick="voirDernierTrajet()"
 >
-🚲 Vélo
-</button>
-
-
-<button
-class="sportButton"
-onclick="choisirSport('Marche')"
->
-🚶 Marche
-</button>
-
-
-<button
-class="sportButton"
-onclick="choisirSport('Course')"
->
-🏃 Course
-</button>
-
-
-<button
-id="annulerGPS"
-onclick="fermerGPS()"
->
-Annuler
-</button>
-
-
+    Dernier trajet
 </div>
+
+
+<div id="dernierInfos">
+
+    Aucun trajet enregistré.
 
 </div>
 
 
+<!-- ================================================= -->
+<!-- ACTIONS -->
+<!-- ================================================= -->
 
-<!-- ========================= -->
-<!-- FENÊTRE SÉLECTION -->
-<!-- ========================= -->
-
-
-<div id="selectionBox">
+<div id="actions">
 
 
 <button
-id="fermerSelection"
-onclick="fermerSelection()"
+    class="action"
+    title="GPS"
+    onclick="ouvrirGPS()"
 >
-✕
+    🛰️
 </button>
 
 
-<h2>
-Trajets sélectionnés
-</h2>
-
-
-
-<div id="tri">
-
-Trier par :
-
-<br>
-
-
-<button onclick="trier('dateRecent')">
-Date récente
+<button
+    class="action"
+    title="Importer TCX"
+    onclick="ouvrirTCX()"
+>
+    📂
 </button>
 
 
-<button onclick="trier('dateAncienne')">
-Date ancienne
+<button
+    class="action"
+    title="Sélectionner un trajet"
+    onclick="ouvrirSelection()"
+>
+    📌
 </button>
 
 
-<button onclick="trier('distancePlus')">
-Distance +
-</button>
-
-
-<button onclick="trier('distanceMoins')">
-Distance -
-</button>
-
-
-<button onclick="trier('tempsPlus')">
-Temps +
-</button>
-
-
-<button onclick="trier('tempsMoins')">
-Temps -
+<button
+    class="action"
+    title="Supprimer"
+    onclick="ouvrirSuppression()"
+>
+    🗑️
 </button>
 
 
 </div>
 
 
-<div id="listeSelection"></div>
+</div>
 
 
 </div>
 
 
+<!-- ================================================= -->
+<!-- INPUT TCX -->
+<!-- ================================================= -->
+
+<input
+    id="fichier"
+    type="file"
+    accept=".tcx"
+    multiple
+    style="display:none"
+>
+
+
+<!-- ================================================= -->
+<!-- PANNEAU SUPPRESSION -->
+<!-- ================================================= -->
+
+<div id="panneauSuppression">
+
+
+<h2>🗑️ Supprimer</h2>
+
+
+<button
+    class="boutonSuppression"
+    id="effacerUn"
+    onclick="activerSuppressionTrajet()"
+>
+    Effacer un trajet
+</button>
+
+
+<button
+    class="boutonSuppression"
+    id="effacerTout"
+    onclick="confirmerToutEffacer()"
+>
+    Tout effacer
+</button>
+
+
+<button
+    class="boutonSuppression"
+    id="annulerSuppression"
+    onclick="fermerSuppression()"
+>
+    Annuler
+</button>
+
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- PANNEAU SÉLECTION -->
+<!-- ================================================= -->
+
+<div id="panneauSelection">
+
+
+<h2>📌 Choisir un trajet</h2>
+
+
+<div id="listeTrajets"></div>
+
+
+<button
+    id="fermerSelection"
+    onclick="fermerSelection()"
+>
+    Fermer
+</button>
+
+
+</div>
+
+
+<!-- ================================================= -->
+<!-- CONFIRMATION -->
+<!-- ================================================= -->
+
+<div id="confirmation">
+
+
+<h3 id="texteConfirmation">
+    Supprimer ce trajet ?
+</h3>
+
+
+<div class="confirmationBoutons">
+
+
+<button
+    id="boutonAnnuler"
+    onclick="annulerConfirmation()"
+>
+    Annuler
+</button>
+
+
+<button
+    id="boutonConfirmer"
+    onclick="confirmerSuppression()"
+>
+    Supprimer
+</button>
+
+
+</div>
+
+
+</div>
+
+
+<div id="message"></div>
+
+
+<!-- ================================================= -->
+<!-- LEAFLET -->
+<!-- ================================================= -->
 
 <script
-src="https://unpkg.com/leaflet/dist/leaflet.js"
+    src="https://unpkg.com/leaflet/dist/leaflet.js"
 ></script>
 
 
 <script>
 
 
-/* ========================= */
-/* CARTE */
-/* ========================= */
-
-
-let map = L.map("map").setView([20,0],2);
-
-
-L.tileLayer(
-
-"https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-
-{
-
-maxZoom:19,
-
-attribution:"© OpenStreetMap"
-
-}
-
-).addTo(map);
-
-
-
-/* ========================= */
-/* ACTIVITÉS */
-/* ========================= */
+/* ================================================= */
+/* DONNÉES */
+/* ================================================= */
 
 
 let activites =
 
 JSON.parse(
-localStorage.getItem("activitesTCX")
+    localStorage.getItem("activitesTCX")
 ) || [];
 
+
+let sportActuel =
+
+localStorage.getItem("sportActuel")
+|| "Vélo";
 
 
 let lignes = [];
 
-let trajetsSelectionnes = [];
+let trajetASupprimer = null;
 
 
-
-/* ========================= */
-/* TYPE DE SPORT */
-/* ========================= */
-
-
-function typeSport(sport){
-
-sport = String(sport).toLowerCase();
+/* ================================================= */
+/* CARTE */
+/* ================================================= */
 
 
-if(
-
-sport.includes("biking") ||
-
-sport.includes("cycling") ||
-
-sport.includes("bicycling")
-
-){
-
-return "Vélo";
-
-}
+let map = L.map("map");
 
 
-if(
+L.tileLayer(
 
-sport.includes("run")
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
 
-){
+    {
 
-return "Course";
+        maxZoom:19,
 
-}
+        attribution:"© OpenStreetMap"
 
+    }
 
-if(
-
-sport.includes("walk") ||
-
-sport.includes("hike")
-
-){
-
-return "Marche";
-
-}
+).addTo(map);
 
 
-return "Autre";
+/* Vue initiale */
+
+map.setView(
+    [20,0],
+    2
+);
+
+
+/* ================================================= */
+/* SPORT */
+/* ================================================= */
+
+
+function emojiSport(sport){
+
+    if(sport === "Vélo")
+        return "🚲";
+
+    if(sport === "Marche")
+        return "🚶";
+
+    if(sport === "Course")
+        return "🏃";
+
+    return "🏃";
 
 }
-
-
-
-/* ========================= */
-/* COULEUR */
-/* ========================= */
 
 
 function couleur(sport){
 
-if(sport == "Vélo")
+    if(sport === "Vélo")
+        return "yellow";
 
-return "yellow";
+    if(sport === "Marche")
+        return "blue";
 
+    if(sport === "Course")
+        return "orange";
 
-if(sport == "Course")
-
-return "orange";
-
-
-if(sport == "Marche")
-
-return "blue";
-
-
-return "red";
+    return "red";
 
 }
 
 
-
-/* ========================= */
-/* TEMPS */
-/* ========================= */
-
-
-function tempsTexte(sec){
-
-if(!sec)
-
-return "Inconnu";
+/* ================================================= */
+/* AFFICHER LE SPORT ACTUEL */
+/* ================================================= */
 
 
-let h = Math.floor(sec / 3600);
+function afficherSportActuel(){
+
+    document.getElementById(
+        "titreSport"
+    ).textContent =
+
+        emojiSport(sportActuel)
+        +
+        " "
+        +
+        sportActuel;
 
 
-let m = Math.floor(
-(sec % 3600) / 60
-);
+    document
+        .querySelectorAll(".choixSport")
+        .forEach(element=>{
 
+            if(
+                element.dataset.sport
+                ===
+                sportActuel
+            ){
 
-return h + " h " + m + " min";
+                element.classList.add(
+                    "actuel"
+                );
 
-}
+            }
 
+            else{
 
+                element.classList.remove(
+                    "actuel"
+                );
 
-/* ========================= */
-/* AFFICHER LES ACTIVITÉS */
-/* ========================= */
+            }
 
-
-function afficher(){
-
-lignes = [];
-
-
-activites.forEach((a,index)=>{
-
-
-let ligne = L.polyline(
-
-a.points,
-
-{
-
-color:couleur(a.sport),
-
-weight:4
-
-}
-
-).addTo(map);
-
-
-
-ligne.activiteIndex = index;
-
-
-
-ligne.bindPopup(`
-
-<b>${a.sport}</b><br>
-
-📅 ${a.date}<br>
-
-📏 ${a.distance} km<br>
-
-⏱ ${tempsTexte(a.temps)}
-
-`);
-
-
-lignes.push(ligne);
-
-
-});
+        });
 
 }
 
 
-
-/* ========================= */
-/* IMPORTER TCX */
-/* ========================= */
-
-
-function ouvrirTCX(){
-
-document
-
-.getElementById("fichier")
-
-.click();
-
-}
+/* ================================================= */
+/* OUVRIR / FERMER SPORTS */
+/* ================================================= */
 
 
+function ouvrirSports(){
 
-/* ========================= */
-/* LECTURE TCX */
-/* ========================= */
-
-
-document
-
-.getElementById("fichier")
-
-.addEventListener(
-"change",
-function(e){
+    let menu =
+        document.getElementById(
+            "menuSports"
+        );
 
 
-for(let fichier of e.target.files){
+    if(
+        menu.style.display
+        ===
+        "block"
+    ){
 
+        menu.style.display =
+            "none";
 
-let lecteur = new FileReader();
+    }
 
+    else{
 
+        menu.style.display =
+            "block";
 
-lecteur.onload = function(){
-
-
-let xml =
-
-new DOMParser()
-
-.parseFromString(
-
-lecteur.result,
-
-"text/xml"
-
-);
-
-
-
-let sport = "Autre";
-
-
-let activity =
-
-xml.getElementsByTagName(
-"Activity"
-)[0];
-
-
-if(activity){
-
-sport =
-
-typeSport(
-
-activity.getAttribute("Sport")
-
-);
+    }
 
 }
 
 
-
-/* DATE */
-
-
-let date = "Inconnue";
-
-
-let id =
-
-xml.getElementsByTagName(
-"Id"
-)[0];
-
-
-if(id){
-
-date =
-
-id.textContent.substring(
-0,
-10
-);
-
-}
-
-
-
-/* DISTANCE */
-
-
-let distance = 0;
-
-
-let distances =
-
-xml.getElementsByTagName(
-"DistanceMeters"
-);
-
-
-if(distances.length){
-
-distance =
-
-(
-
-parseFloat(
-
-distances[
-distances.length - 1
-].textContent
-
-)
-
-/1000
-
-).toFixed(2);
-
-}
-
-
-
-/* TEMPS */
-
-
-let temps = 0;
-
-
-let tempsXML =
-
-xml.getElementsByTagName(
-"TotalTimeSeconds"
-);
-
-
-if(tempsXML.length){
-
-temps =
-
-parseFloat(
-
-tempsXML[0].textContent
-
-);
-
-}
-
-
-
-/* POINTS GPS */
-
-
-let points = [];
-
-
-let positions =
-
-xml.getElementsByTagName(
-"Position"
-);
-
-
-for(let p of positions){
-
-
-let lat =
-
-p.getElementsByTagName(
-"LatitudeDegrees"
-)[0];
-
-
-let lon =
-
-p.getElementsByTagName(
-"LongitudeDegrees"
-)[0];
-
-
-if(lat && lon){
-
-points.push([
-
-parseFloat(
-lat.textContent
-),
-
-parseFloat(
-lon.textContent
-)
-
-]);
-
-}
-
-}
-
-
-
-/* CALCUL DISTANCE SI ABSENTE */
-
-
-if(distance == 0){
-
-let total = 0;
-
-
-for(
-let i = 1;
-i < points.length;
-i++
-){
-
-total += map.distance(
-
-points[i-1],
-
-points[i]
-
-);
-
-}
-
-
-distance =
-
-(total / 1000).toFixed(2);
-
-}
-
-
-
-/* ACTIVITÉ */
-
-
-let activite = {
-
-sport:sport,
-
-date:date,
-
-distance:Number(distance),
-
-temps:Number(temps),
-
-points:points
-
-};
-
-
-
-activites.push(activite);
-
-
-
-localStorage.setItem(
-
-"activitesTCX",
-
-JSON.stringify(
-activites
-)
-
-);
-
-
-
-/* LIGNE SUR LA CARTE */
-
-
-let ligne =
-
-L.polyline(
-
-points,
-
-{
-
-color:couleur(sport),
-
-weight:4
-
-}
-
-).addTo(map);
-
-
-
-ligne.activiteIndex =
-
-activites.length - 1;
-
-
-lignes.push(ligne);
-
-
-
-ligne.bindPopup(`
-
-<b>${sport}</b><br>
-
-📅 ${date}<br>
-
-📏 ${distance} km<br>
-
-⏱ ${tempsTexte(temps)}
-
-`);
-
-
-
-if(points.length){
-
-map.fitBounds(points);
-
-}
-
-
-};
-
-
-lecteur.readAsText(fichier);
-
-
-}
-
-
-}
-
-);
-
-
-
-/* ========================= */
-/* OUVRIR GPS */
-/* ========================= */
-
-
-function ouvrirGPS(){
-
-document
-
-.getElementById("gpsSportBox")
-
-.style.display = "flex";
-
-}
-
-
-
-/* ========================= */
-/* FERMER GPS */
-/* ========================= */
-
-
-function fermerGPS(){
-
-document
-
-.getElementById("gpsSportBox")
-
-.style.display = "none";
-
-}
-
-
-
-/* ========================= */
-/* CHOIX DU SPORT */
-/* ========================= */
+/* ================================================= */
+/* CHOISIR SPORT */
+/* ================================================= */
 
 
 function choisirSport(sport){
 
-/* Fermer la fenêtre */
-
-fermerGPS();
+    sportActuel = sport;
 
 
-/* Ouvrir la page GPS */
-
-location.href =
-"gps.html?sport=" +
-encodeURIComponent(sport);
-
-}
+    localStorage.setItem(
+        "sportActuel",
+        sportActuel
+    );
 
 
-
-/* ========================= */
-/* MODE SÉLECTION */
-/* ========================= */
+    afficherSportActuel();
 
 
-function modeSelection(){
+    document.getElementById(
+        "menuSports"
+    ).style.display =
+        "none";
 
 
-let vueActuelle =
-map.getBounds();
+    afficherTrajets();
 
 
-trajetsSelectionnes = [];
-
-
-activites.forEach(
-(a,index)=>{
-
-
-for(let point of a.points){
-
-
-if(
-
-vueActuelle.contains([
-
-point[0],
-
-point[1]
-
-])
-
-){
-
-
-trajetsSelectionnes.push(
-index
-);
-
-break;
-
-}
-
-}
-
-}
-
-);
-
-
-afficherSelection();
+    afficherDernierTrajet();
 
 }
 
 
-
-/* ========================= */
-/* AFFICHER SÉLECTION */
-/* ========================= */
-
-
-function afficherSelection(){
+/* ================================================= */
+/* TEMPS */
+/* ================================================= */
 
 
-let liste =
+function tempsTexte(sec){
 
-document.getElementById(
-"listeSelection"
-);
+    sec = Number(sec) || 0;
 
 
-liste.innerHTML = "";
+    if(sec <= 0){
+
+        return "Inconnu";
+
+    }
 
 
-trajetsSelectionnes.forEach(
-index=>{
+    let heures =
+
+        Math.floor(
+            sec / 3600
+        );
 
 
-let a = activites[index];
+    let minutes =
+
+        Math.floor(
+            (sec % 3600) / 60
+        );
 
 
-let div =
-document.createElement("div");
+    let secondes =
+
+        Math.floor(
+            sec % 60
+        );
 
 
-div.className = "trajet";
+    if(heures > 0){
+
+        return (
+
+            heures
+            +
+            " h "
+            +
+            minutes
+            +
+            " min"
+
+        );
+
+    }
 
 
-div.innerHTML = `
+    return (
 
-📅 ${a.date}
+        minutes
+        +
+        " min "
+        +
+        secondes
+        +
+        " s"
 
-<br>
+    );
 
-📏 ${a.distance} km
-
-<br>
-
-⏱ ${tempsTexte(a.temps)}
-
-<br><br>
-
-<button
-onclick="voirTrajet(${index})"
->
-
-📍 Voir ce trajet
-
-</button>
-
-`;
+}
 
 
-liste.appendChild(div);
+/* ================================================= */
+/* AFFICHER LES TRAJETS DU SPORT */
+/* ================================================= */
 
 
-});
+function afficherTrajets(){
+
+    lignes.forEach(
+        ligne => map.removeLayer(ligne)
+    );
+
+
+    lignes = [];
+
+
+    let trajetsSport = [];
+
+
+    activites.forEach(
+        (a,index)=>{
+
+            if(
+                a.sport
+                ===
+                sportActuel
+            ){
+
+                trajetsSport.push({
+                    activite:a,
+                    index:index
+                });
+
+            }
+
+        }
+    );
+
+
+    trajetsSport.forEach(
+        objet=>{
+
+            let a =
+                objet.activite;
+
+
+            if(
+                !a.points
+                ||
+                a.points.length < 2
+            ){
+
+                return;
+
+            }
+
+
+            let ligne =
+
+                L.polyline(
+
+                    a.points,
+
+                    {
+
+                        color:
+                            couleur(a.sport),
+
+                        weight:4,
+
+                        opacity:0.85
+
+                    }
+
+                ).addTo(map);
+
+
+            ligne.activiteIndex =
+                objet.index;
+
+
+            ligne.bindPopup(
+
+                "<b>"
+                +
+                emojiSport(a.sport)
+                +
+                " "
+                +
+                a.sport
+                +
+                "</b><br><br>"
+                +
+
+                "📅 "
+                +
+                a.date
+                +
+                "<br>"
+
+                +
+
+                "📏 "
+                +
+                a.distance
+                +
+                " km"
+                +
+
+                "<br>"
+
+                +
+
+                "⏱️ "
+                +
+                tempsTexte(a.temps)
+
+            );
+
+
+            lignes.push(
+                ligne
+            );
+
+        }
+    );
+
+
+    /* Ajuster la carte */
+
+    if(lignes.length > 0){
+
+        let groupe =
+            L.featureGroup(lignes);
+
+
+        map.fitBounds(
+            groupe.getBounds(),
+            {
+                padding:[20,20]
+            }
+        );
+
+    }
+
+
+    afficherDernierTrajet();
+
+}
+
+
+/* ================================================= */
+/* TROUVER LE DERNIER TRAJET DU SPORT */
+/* ================================================= */
+
+
+function trouverDernierTrajet(){
+
+    let resultat = null;
+
+
+    activites.forEach(
+        (a,index)=>{
+
+            if(
+                a.sport
+                !==
+                sportActuel
+            ){
+
+                return;
+
+            }
+
+
+            if(!resultat){
+
+                resultat = {
+                    activite:a,
+                    index:index
+                };
+
+                return;
+
+            }
+
+
+            let dateA =
+                new Date(a.date);
+
+
+            let dateB =
+                new Date(
+                    resultat.activite.date
+                );
+
+
+            if(dateA > dateB){
+
+                resultat = {
+                    activite:a,
+                    index:index
+                };
+
+            }
+
+        }
+    );
+
+
+    return resultat;
+
+}
+
+
+/* ================================================= */
+/* AFFICHER LE DERNIER TRAJET */
+/* ================================================= */
+
+
+function afficherDernierTrajet(){
+
+    let resultat =
+        trouverDernierTrajet();
+
+
+    let element =
+        document.getElementById(
+            "dernierInfos"
+        );
+
+
+    if(!resultat){
+
+        element.innerHTML =
+
+            "Aucun trajet de "
+            +
+            sportActuel.toLowerCase()
+            +
+            " enregistré.";
+
+        return;
+
+    }
+
+
+    let a =
+        resultat.activite;
+
+
+    element.innerHTML =
+
+        "<b>"
+        +
+        emojiSport(a.sport)
+        +
+        " "
+        +
+        a.sport
+        +
+        "</b>"
+        +
+
+        "<br><br>"
+
+        +
+
+        "📅 "
+        +
+        a.date
+
+        +
+
+        "<br>"
+
+        +
+
+        "📏 "
+        +
+        a.distance
+        +
+        " km"
+
+        +
+
+        "<br>"
+
+        +
+
+        "⏱️ "
+        +
+        tempsTexte(a.temps);
+
+}
+
+
+/* ================================================= */
+/* VOIR LE DERNIER TRAJET */
+/* ================================================= */
+
+
+function voirDernierTrajet(){
+
+    let resultat =
+        trouverDernierTrajet();
+
+
+    if(!resultat){
+
+        afficherMessage(
+            "Aucun trajet à afficher."
+        );
+
+        return;
+
+    }
+
+
+    let ligne =
+        lignes.find(
+            l =>
+                l.activiteIndex
+                ===
+                resultat.index
+        );
+
+
+    if(!ligne){
+
+        return;
+
+    }
+
+
+    /* On zoome SEULEMENT la carte */
+
+    map.fitBounds(
+        ligne.getBounds(),
+        {
+            padding:[30,30],
+            maxZoom:17
+        }
+    );
+
+
+    /* Surbrillance */
+
+    ligne.setStyle({
+
+        color:"#00ff00",
+
+        weight:8,
+
+        opacity:1
+
+    });
+
+
+    ligne.bringToFront();
+
+
+    setTimeout(()=>{
+
+        ligne.setStyle({
+
+            color:
+                couleur(
+                    resultat.activite.sport
+                ),
+
+            weight:4,
+
+            opacity:0.85
+
+        });
+
+    },4000);
+
+}
+
+
+/* ================================================= */
+/* GPS */
+/* ================================================= */
+
+
+function ouvrirGPS(){
+
+    let sportURL =
+        encodeURIComponent(
+            sportActuel
+        );
+
+
+    window.location.href =
+        "gps.html?sport="
+        +
+        sportURL;
+
+}
+
+
+/* ================================================= */
+/* IMPORT TCX */
+/* ================================================= */
+
+
+function ouvrirTCX(){
+
+    document
+        .getElementById("fichier")
+        .click();
+
+}
 
 
 document
+    .getElementById("fichier")
+    .addEventListener(
+        "change",
+        importerTCX
+    );
 
-.getElementById(
-"selectionBox"
-)
 
-.style.display = "block";
+function importerTCX(e){
+
+    for(
+        let fichier
+        of e.target.files
+    ){
+
+        let lecteur =
+            new FileReader();
+
+
+        lecteur.onload =
+            function(){
+
+                let xml =
+
+                    new DOMParser()
+                    .parseFromString(
+                        lecteur.result,
+                        "text/xml"
+                    );
+
+
+                let sport =
+                    "Autre";
+
+
+                let activity =
+
+                    xml
+                    .getElementsByTagName(
+                        "Activity"
+                    )[0];
+
+
+                if(activity){
+
+                    sport =
+                        typeSport(
+
+                            activity
+                            .getAttribute(
+                                "Sport"
+                            )
+
+                        );
+
+                }
+
+
+                let date =
+                    "Inconnue";
+
+
+                let id =
+
+                    xml
+                    .getElementsByTagName(
+                        "Id"
+                    )[0];
+
+
+                if(id){
+
+                    date =
+                        id.textContent
+                        .substring(
+                            0,
+                            10
+                        );
+
+                }
+
+
+                let distance = 0;
+
+
+                let distances =
+
+                    xml
+                    .getElementsByTagName(
+                        "DistanceMeters"
+                    );
+
+
+                if(
+                    distances.length
+                ){
+
+                    distance =
+
+                        (
+
+                            parseFloat(
+
+                                distances[
+                                    distances.length - 1
+                                ].textContent
+
+                            )
+
+                            /
+
+                            1000
+
+                        ).toFixed(2);
+
+                }
+
+
+                let temps = 0;
+
+
+                let tempsXML =
+
+                    xml
+                    .getElementsByTagName(
+                        "TotalTimeSeconds"
+                    );
+
+
+                if(
+                    tempsXML.length
+                ){
+
+                    temps =
+
+                        parseFloat(
+
+                            tempsXML[0]
+                            .textContent
+
+                        );
+
+                }
+
+
+                let points = [];
+
+
+                let positions =
+
+                    xml
+                    .getElementsByTagName(
+                        "Position"
+                    );
+
+
+                for(
+                    let p
+                    of positions
+                ){
+
+                    let lat =
+
+                        p
+                        .getElementsByTagName(
+                            "LatitudeDegrees"
+                        )[0];
+
+
+                    let lon =
+
+                        p
+                        .getElementsByTagName(
+                            "LongitudeDegrees"
+                        )[0];
+
+
+                    if(
+                        lat
+                        &&
+                        lon
+                    ){
+
+                        points.push([
+
+                            parseFloat(
+                                lat.textContent
+                            ),
+
+                            parseFloat(
+                                lon.textContent
+                            )
+
+                        ]);
+
+                    }
+
+                }
+
+
+                /* Calculer distance si TCX ne la donne pas */
+
+                if(
+                    Number(distance)
+                    ===
+                    0
+                ){
+
+                    let total = 0;
+
+
+                    for(
+                        let i=1;
+                        i<points.length;
+                        i++
+                    ){
+
+                        total +=
+
+                            map.distance(
+
+                                points[i-1],
+
+                                points[i]
+
+                            );
+
+                    }
+
+
+                    distance =
+
+                        (
+                            total / 1000
+                        ).toFixed(2);
+
+                }
+
+
+                let activite = {
+
+                    sport:sport,
+
+                    date:date,
+
+                    distance:Number(
+                        distance
+                    ),
+
+                    temps:Number(
+                        temps
+                    ),
+
+                    points:points
+
+                };
+
+
+                activites.push(
+                    activite
+                );
+
+
+                localStorage.setItem(
+
+                    "activitesTCX",
+
+                    JSON.stringify(
+                        activites
+                    )
+
+                );
+
+
+                /* Réafficher */
+
+                afficherTrajets();
+
+                afficherDernierTrajet();
+
+
+                afficherMessage(
+                    "✅ Trajet importé"
+                );
+
+            };
+
+
+        lecteur.readAsText(
+            fichier
+        );
+
+    }
+
+
+    /* Permet de réimporter le même fichier */
+
+    e.target.value = "";
 
 }
 
 
-
-/* ========================= */
-/* TRI */
-/* ========================= */
-
-
-function trier(type){
+/* ================================================= */
+/* TYPE DE SPORT TCX */
+/* ================================================= */
 
 
-trajetsSelectionnes.sort(
-(a,b)=>{
+function typeSport(sport){
+
+    sport =
+        String(sport)
+        .toLowerCase();
 
 
-let x = activites[a];
+    if(
 
-let y = activites[b];
+        sport.includes("biking")
+        ||
+        sport.includes("cycling")
+        ||
+        sport.includes("bicycling")
 
+    ){
 
-if(type == "dateRecent")
+        return "Vélo";
 
-return new Date(y.date) -
-new Date(x.date);
-
-
-if(type == "dateAncienne")
-
-return new Date(x.date) -
-new Date(y.date);
+    }
 
 
-if(type == "distancePlus")
+    if(
+        sport.includes("run")
+    ){
 
-return y.distance - x.distance;
+        return "Course";
 
-
-if(type == "distanceMoins")
-
-return x.distance - y.distance;
-
-
-if(type == "tempsPlus")
-
-return y.temps - x.temps;
+    }
 
 
-if(type == "tempsMoins")
+    if(
 
-return x.temps - y.temps;
+        sport.includes("walk")
+        ||
+        sport.includes("hike")
+
+    ){
+
+        return "Marche";
+
+    }
 
 
-});
-
-
-afficherSelection();
+    return "Autre";
 
 }
 
 
-
-/* ========================= */
-/* VOIR TRAJET */
-/* ========================= */
-
-
-function voirTrajet(index){
+/* ================================================= */
+/* OUVRIR SUPPRESSION */
+/* ================================================= */
 
 
-fermerSelection();
+function ouvrirSuppression(){
 
-
-let ligne = lignes[index];
-
-
-map.fitBounds(
-
-ligne.getBounds()
-
-);
-
-
-ligne.setStyle({
-
-color:"lime",
-
-weight:8
-
-});
-
-
-setTimeout(()=>{
-
-
-ligne.setStyle({
-
-color:couleur(
-activites[index].sport
-),
-
-weight:4
-
-});
-
-
-},4000);
+    document.getElementById(
+        "panneauSuppression"
+    ).style.display =
+        "block";
 
 }
 
 
+/* ================================================= */
+/* FERMER SUPPRESSION */
+/* ================================================= */
 
-/* ========================= */
+
+function fermerSuppression(){
+
+    document.getElementById(
+        "panneauSuppression"
+    ).style.display =
+        "none";
+
+}
+
+
+/* ================================================= */
+/* SUPPRIMER UN TRAJET */
+/* ================================================= */
+
+
+function activerSuppressionTrajet(){
+
+    fermerSuppression();
+
+
+    let trajets =
+
+        activites.filter(
+            a =>
+                a.sport
+                ===
+                sportActuel
+        );
+
+
+    if(trajets.length === 0){
+
+        afficherMessage(
+            "Aucun trajet à supprimer."
+        );
+
+        return;
+
+    }
+
+
+    let panneau =
+
+        document.getElementById(
+            "panneauSelection"
+        );
+
+
+    let liste =
+
+        document.getElementById(
+            "listeTrajets"
+        );
+
+
+    liste.innerHTML = "";
+
+
+    trajets.forEach(
+        a=>{
+
+            let index =
+                activites.indexOf(a);
+
+
+            let div =
+                document.createElement(
+                    "div"
+                );
+
+
+            div.className =
+                "trajetChoix";
+
+
+            div.innerHTML =
+
+                "<b>"
+                +
+                emojiSport(a.sport)
+                +
+                " "
+                +
+                a.date
+                +
+                "</b>"
+                +
+
+                "<br>"
+
+                +
+
+                "📏 "
+                +
+                a.distance
+                +
+                " km"
+
+                +
+
+                "<br>"
+
+                +
+
+                "⏱️ "
+                +
+                tempsTexte(a.temps);
+
+
+            div.onclick =
+                function(){
+
+                    demanderSuppression(
+                        index
+                    );
+
+                };
+
+
+            liste.appendChild(
+                div
+            );
+
+        }
+    );
+
+
+    panneau.style.display =
+        "block";
+
+}
+
+
+/* ================================================= */
 /* FERMER SÉLECTION */
-/* ========================= */
+/* ================================================= */
 
 
 function fermerSelection(){
 
-
-document
-
-.getElementById(
-"selectionBox"
-)
-
-.style.display = "none";
+    document.getElementById(
+        "panneauSelection"
+    ).style.display =
+        "none";
 
 }
 
 
-
-/* ========================= */
-/* EFFACER */
-/* ========================= */
-
-
-function effacer(){
+/* ================================================= */
+/* DEMANDER CONFIRMATION */
+/* ================================================= */
 
 
-if(
+function demanderSuppression(index){
 
-confirm(
-"Effacer toutes les activités ?"
-)
-
-){
+    trajetASupprimer =
+        index;
 
 
-localStorage.removeItem(
-"activitesTCX"
+    fermerSelection();
+
+
+    let a =
+        activites[index];
+
+
+    document.getElementById(
+        "texteConfirmation"
+    ).textContent =
+
+        "Supprimer le trajet du "
+        +
+        a.date
+        +
+        " ?";
+
+
+    document.getElementById(
+        "confirmation"
+    ).style.display =
+        "block";
+
+}
+
+
+/* ================================================= */
+/* ANNULER CONFIRMATION */
+/* ================================================= */
+
+
+function annulerConfirmation(){
+
+    trajetASupprimer =
+        null;
+
+
+    document.getElementById(
+        "confirmation"
+    ).style.display =
+        "none";
+
+}
+
+
+/* ================================================= */
+/* CONFIRMER SUPPRESSION */
+/* ================================================= */
+
+
+function confirmerSuppression(){
+
+    if(
+        trajetASupprimer
+        ===
+        null
+    ){
+
+        return;
+
+    }
+
+
+    activites.splice(
+        trajetASupprimer,
+        1
+    );
+
+
+    localStorage.setItem(
+
+        "activitesTCX",
+
+        JSON.stringify(
+            activites
+        )
+
+    );
+
+
+    trajetASupprimer =
+        null;
+
+
+    document.getElementById(
+        "confirmation"
+    ).style.display =
+        "none";
+
+
+    afficherTrajets();
+
+    afficherDernierTrajet();
+
+
+    afficherMessage(
+        "🗑️ Trajet supprimé"
+    );
+
+}
+
+
+/* ================================================= */
+/* TOUT EFFACER */
+/* ================================================= */
+
+
+function confirmerToutEffacer(){
+
+    fermerSuppression();
+
+
+    let nombre =
+        activites.length;
+
+
+    if(nombre === 0){
+
+        afficherMessage(
+            "Aucun trajet enregistré."
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "texteConfirmation"
+    ).textContent =
+
+        "Effacer tous les trajets ?";
+
+
+    trajetASupprimer =
+        "TOUT";
+
+
+    document.getElementById(
+        "confirmation"
+    ).style.display =
+        "block";
+
+}
+
+
+/* ================================================= */
+/* MODIFIER CONFIRMATION POUR TOUT EFFACER */
+/* ================================================= */
+
+
+document.getElementById(
+    "boutonConfirmer"
+).onclick =
+
+function(){
+
+    if(
+        trajetASupprimer
+        ===
+        "TOUT"
+    ){
+
+        activites = [];
+
+
+        localStorage.removeItem(
+            "activitesTCX"
+        );
+
+
+        trajetASupprimer =
+            null;
+
+
+        document.getElementById(
+            "confirmation"
+        ).style.display =
+            "none";
+
+
+        afficherTrajets();
+
+        afficherDernierTrajet();
+
+
+        afficherMessage(
+            "🗑️ Tous les trajets ont été supprimés"
+        );
+
+
+        return;
+
+    }
+
+
+    confirmerSuppression();
+
+};
+
+
+/* ================================================= */
+/* MESSAGE */
+/* ================================================= */
+
+
+function afficherMessage(texte){
+
+    let message =
+        document.getElementById(
+            "message"
+        );
+
+
+    message.textContent =
+        texte;
+
+
+    message.style.display =
+        "block";
+
+
+    setTimeout(
+        ()=>{
+
+            message.style.display =
+                "none";
+
+        },
+        2500
+    );
+
+}
+
+
+/* ================================================= */
+/* INITIALISATION */
+/* ================================================= */
+
+
+afficherSportActuel();
+
+afficherTrajets();
+
+afficherDernierTrajet();
+
+
+/* ================================================= */
+/* FERMER LE MENU SI ON CLIQUE AILLEURS */
+/* ================================================= */
+
+document.addEventListener(
+    "click",
+    function(e){
+
+        let menu =
+            document.getElementById(
+                "menuSports"
+            );
+
+
+        let bouton =
+            document.getElementById(
+                "boutonSports"
+            );
+
+
+        if(
+            menu.style.display
+            ===
+            "block"
+            &&
+            !menu.contains(e.target)
+            &&
+            e.target !== bouton
+        ){
+
+            menu.style.display =
+                "none";
+
+        }
+
+    }
 );
 
-
-location.reload();
-
-
-}
-
-}
-
-
-
-/* ========================= */
-/* AFFICHAGE INITIAL */
-/* ========================= */
-
-
-afficher();
-
-
 </script>
-
 
 </body>
 
 </html>
+```
