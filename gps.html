@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -20,6 +21,7 @@ href="https://unpkg.com/leaflet/dist/leaflet.css"
 *{
 box-sizing:border-box;
 }
+
 
 body{
 
@@ -71,9 +73,9 @@ flex-direction:column;
 
 align-items:center;
 
-justify-content:center;
+justify-content:flex-start;
 
-padding:10px;
+padding-top:5px;
 
 }
 
@@ -88,7 +90,9 @@ font-size:24px;
 
 font-weight:bold;
 
-margin-bottom:10px;
+margin-top:0;
+
+margin-bottom:5px;
 
 }
 
@@ -103,7 +107,7 @@ font-size:50px;
 
 font-weight:bold;
 
-margin:5px;
+margin:0;
 
 }
 
@@ -116,20 +120,20 @@ margin:5px;
 
 font-size:32px;
 
-margin:5px 0 20px 0;
+margin:0 0 10px 0;
 
 }
 
 
 /* ========================= */
-/* CONTENEUR DES 3 BOUTONS */
+/* COMMANDES */
 /* ========================= */
 
 #commandes{
 
 display:flex;
 
-width:100%;
+width:94%;
 
 max-width:500px;
 
@@ -146,7 +150,7 @@ gap:5px;
 
 button{
 
-padding:13px 12px;
+padding:13px 10px;
 
 font-size:16px;
 
@@ -160,7 +164,7 @@ cursor:pointer;
 
 
 /* ========================= */
-/* BOUTONS GPS */
+/* DÉMARRER */
 /* ========================= */
 
 #demarrer{
@@ -174,6 +178,10 @@ flex:1;
 }
 
 
+/* ========================= */
+/* PAUSE */
+/* ========================= */
+
 #pause{
 
 background:#ff9800;
@@ -184,6 +192,10 @@ flex:1;
 
 }
 
+
+/* ========================= */
+/* TERMINER */
+/* ========================= */
 
 #terminer{
 
@@ -204,9 +216,9 @@ flex:1;
 
 background:#eeeeee;
 
-margin-top:10px;
+margin-top:8px;
 
-padding:12px 25px;
+padding:10px 25px;
 
 }
 
@@ -221,7 +233,7 @@ font-size:13px;
 
 color:#666;
 
-margin-top:10px;
+margin-top:6px;
 
 }
 
@@ -295,7 +307,7 @@ display:none;
 
 
 <!-- ========================= -->
-<!-- 3 BOUTONS ALIGNÉS -->
+<!-- BOUTONS -->
 <!-- ========================= -->
 
 <div id="commandes">
@@ -703,8 +715,6 @@ position.coords.accuracy;
 
 
 
-/* Afficher précision */
-
 document.getElementById(
 "precision"
 ).textContent =
@@ -815,11 +825,7 @@ lon
 
 
 
-/*
-On accepte maintenant
-les déplacements de 1 m
-ou plus.
-*/
+/* déplacements de 1 m minimum */
 
 if(nouvelleDistance < 1){
 
@@ -829,10 +835,7 @@ return;
 
 
 
-/*
-On ignore seulement les
-positions très imprécises.
-*/
+/* positions très imprécises */
 
 if(precision > 100){
 
@@ -843,7 +846,7 @@ return;
 
 
 /* ========================= */
-/* AJOUT POINT */
+/* AJOUT DU POINT */
 /* ========================= */
 
 
@@ -899,7 +902,7 @@ nouveauPoint
 
 
 /* ========================= */
-/* CENTRER CARTE */
+/* SUIVRE POSITION */
 /* ========================= */
 
 
@@ -962,7 +965,7 @@ message(
 
 
 /* ========================= */
-/* DÉMARRER */
+/* DÉMARRER GPS */
 /* ========================= */
 
 
@@ -980,11 +983,7 @@ return;
 }
 
 
-
-/*
-Première position
-avec haute précision.
-*/
+/* première position */
 
 navigator.geolocation.getCurrentPosition(
 
@@ -1011,10 +1010,7 @@ timeout:20000
 );
 
 
-
-/*
-Suivi continu.
-*/
+/* suivi continu */
 
 watchID =
 
@@ -1037,13 +1033,13 @@ timeout:5000
 );
 
 
-
 enCours = true;
 
 enPause = false;
 
 
-debutTemps = Date.now();
+debutTemps =
+Date.now();
 
 
 intervalleTemps =
@@ -1134,6 +1130,7 @@ else{
 
 
 enPause = false;
+
 
 debutTemps =
 Date.now();
@@ -1230,7 +1227,6 @@ return;
 }
 
 
-
 if(watchID !== null){
 
 navigator.geolocation.clearWatch(
@@ -1310,7 +1306,6 @@ activites
 )
 
 );
-
 
 
 enCours = false;
